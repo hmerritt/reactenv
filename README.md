@@ -11,17 +11,39 @@ Useful for adding ENV config to Docker images, **without** having to build react
 Example Dockerfile build
 
 ```Dockerfile
-# Build stage - copy, install, build, reactENV
-FROM node as build-stage
+#
+# File: Dockerfile
+#
+
+# Build stage - install, build, reactENV
+FROM node as build
 WORKDIR /app
 COPY ./ /app/
-
-RUN apk add --no-cache libc6-compat  # needed for Go programs to run
 RUN npm install
 RUN npm run build
 
-RUN wget URL -o reactenv  # download reactENV
-RUN reactenv build        # run reactenv in build directory
+# Final stage, production environment - use build, reactENV
+FROM nginx:1.16.0-alpine
+COPY --from=build /app/build /usr/share/nginx/html
+EXPOSE 80
+
+RUN apk add --no-cache wget libc6-compat       # needed for Go programs to run
+RUN wget URL -o reactenv && chmod +x reactenv  # download reactENV + make it an executable
+
+ENTRYPOINT ["sh", "docker-entrypoint.sh"]
+
+
+#
+# File: docker-entrypoint.sh
+#
+
+reactenv /usr/share/nginx/html            # run reactenv in build directory
+
+if [ "${?}" != "0" ]; then                # exit entrypoint script if reactenv failed
+    exit 1
+fi
+
+nginx -g daemon off;
 ```
 
 ## Reasoning
