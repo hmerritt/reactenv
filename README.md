@@ -6,7 +6,33 @@ Used as an abstraction layer to build react once, then configure later.
 
 Useful for adding ENV config to Docker images, **without** having to build react every time you start the container.
 
+## Install
+
+Grab the latest binary from the releases page [here](https://github.com/hmerritt/reactenv/releases/latest).
+
 ## Usage
+
+### Binary
+
+`reactenv` is a single binary file.
+
+`reactenv` uses the hosts enviroment variables and will replace all matches in the react build. (support for `env` files is coming soon).
+
+```bash
+$ reactenv <path-to-react-build>
+```
+
+### React.js
+
+```javascript
+const API = process.env.REACT_APP_API;
+
+// OR
+
+const API = window.reactenv.REACT_APP_API};
+```
+
+### Example
 
 Example Dockerfile build
 
