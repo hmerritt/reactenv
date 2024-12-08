@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"regexp"
 	"strings"
 
 	"github.com/hmerritt/reactenv/ui"
@@ -82,7 +83,7 @@ func (c *RunCommand) Run(args []string) int {
 		fmt.Println(file.Name())
 
 		// ENV value
-		envName := "process.env.NODE_ENV"
+		envName := "reactenv.NODE_ENV_TEST"
 		envValue := os.Getenv("ANDROID_HOME")
 
 		if envValue == "" {
@@ -99,7 +100,7 @@ func (c *RunCommand) Run(args []string) int {
 		}
 
 		// Inject environment variable into .js file
-		assetFile = []byte(strings.ReplaceAll(string(assetFile), envName, envValue))
+		assetFile = regexp.MustCompile(envName).ReplaceAll(assetFile, []byte(fmt.Sprintf(envValue)))
 
 		// Write .js file
 		if err := os.WriteFile(path.Join(pathToAssets, file.Name()), assetFile, 0644); err != nil {
