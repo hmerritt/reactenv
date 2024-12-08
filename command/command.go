@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"hmerritt/reactenv/version"
+	"github.com/hmerritt/reactenv/version"
 
 	"github.com/mitchellh/cli"
 )

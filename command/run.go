@@ -2,11 +2,10 @@ package command
 
 import (
 	"fmt"
-	"hmerritt/reactenv/ui"
 	"os"
 	"strings"
 
-	"github.com/samber/lo"
+	"github.com/hmerritt/reactenv/ui"
 )
 
 type RunCommand struct {
@@ -28,7 +27,7 @@ Usage: reactenv run [options] FILE
 }
 
 func (c *RunCommand) Flags() *FlagMap {
-	return GetFlagMap(lo.Union(FlagNamesGlobal, []string{"start", "end"}))
+	return GetFlagMap(FlagNamesGlobal)
 }
 
 func (c *RunCommand) strictExit() {

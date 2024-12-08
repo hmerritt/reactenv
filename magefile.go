@@ -4,11 +4,12 @@ package main
 
 import (
 	"fmt"
-	"hmerritt/reactenv/version"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/hmerritt/reactenv/version"
 
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"

@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"hmerritt/reactenv/ui"
+	"github.com/hmerritt/reactenv/ui"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/posener/complete"

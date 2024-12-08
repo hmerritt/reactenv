@@ -1,8 +1,8 @@
 package main
 
 import (
-	"hmerritt/reactenv/command"
-	"hmerritt/reactenv/version"
+	"github.com/hmerritt/reactenv/command"
+	"github.com/hmerritt/reactenv/version"
 )
 
 func main() {
