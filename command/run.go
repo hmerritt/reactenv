@@ -2,9 +2,9 @@ package command
 
 import (
 	"fmt"
+	"hmerritt/reactenv/ui"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/samber/lo"
 )
@@ -39,8 +39,7 @@ func (c *RunCommand) strictExit() {
 }
 
 func (c *RunCommand) Run(args []string) int {
-	// Record the total duration of this command
-	timeStart := time.Now()
+	duration := ui.InitDuration(c.UI)
 
 	args = c.Flags().Parse(c.UI, args)
 
@@ -55,7 +54,6 @@ func (c *RunCommand) Run(args []string) int {
 
 	fmt.Println(pathToAssets)
 
-	c.UI.Output(fmt.Sprintf("%s in %s", c.UI.Colorize("ICS file converted", c.UI.SuccessColor), time.Since(timeStart)))
-
+	duration.In(c.UI.SuccessColor, "Injected environment variables")
 	return 0
 }
