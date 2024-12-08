@@ -2,7 +2,9 @@ package command
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
+	"path"
 	"strings"
 
 	"github.com/hmerritt/reactenv/ui"
@@ -42,16 +44,69 @@ func (c *RunCommand) Run(args []string) int {
 
 	args = c.Flags().Parse(c.UI, args)
 
-	var pathToAssets string
-
 	if len(args) == 0 {
-		c.UI.Error("No file entered.")
+		c.UI.Error("No asset path entered.")
 		os.Exit(1)
-	} else {
-		pathToAssets = args[0]
 	}
 
-	fmt.Println(pathToAssets)
+	pathToAssets := args[0]
+
+	if _, err := os.Stat(pathToAssets); os.IsNotExist(err) {
+		c.UI.Error("Asset path does not exist.")
+		os.Exit(1)
+	}
+
+	// Find all .js files
+	assetFiles, err := os.ReadDir(pathToAssets)
+	jsFiles := make([]fs.DirEntry, 0, len(assetFiles))
+
+	if err != nil {
+		c.UI.Error("Failed to read asset directory files.")
+		os.Exit(1)
+	}
+
+	for _, file := range assetFiles {
+		if file.IsDir() || !strings.HasSuffix(file.Name(), ".js") {
+			continue
+		}
+		jsFiles = append(jsFiles, file)
+	}
+
+	if len(jsFiles) == 0 {
+		c.UI.Error("No .js files found.")
+		os.Exit(1)
+	}
+
+	// Inject environment variables into .js files
+	for _, file := range jsFiles {
+		fmt.Println(file.Name())
+
+		// ENV value
+		envName := "process.env.NODE_ENV"
+		envValue := os.Getenv("ANDROID_HOME")
+
+		if envValue == "" {
+			c.UI.Error("Environment variable not found.")
+			os.Exit(1)
+		}
+
+		// Read .js file
+		assetFile, err := os.ReadFile(path.Join(pathToAssets, file.Name()))
+
+		if err != nil {
+			c.UI.Error("Failed to read .js file.")
+			os.Exit(1)
+		}
+
+		// Inject environment variable into .js file
+		assetFile = []byte(strings.ReplaceAll(string(assetFile), envName, envValue))
+
+		// Write .js file
+		if err := os.WriteFile(path.Join(pathToAssets, file.Name()), assetFile, 0644); err != nil {
+			c.UI.Error("Failed to write .js file.")
+			os.Exit(1)
+		}
+	}
 
 	duration.In(c.UI.SuccessColor, "Injected environment variables")
 	return 0

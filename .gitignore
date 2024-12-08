@@ -8,6 +8,7 @@ target/
 .idea/
 .vagrant/
 vendor/
+example/
 
 *.lnk
 *.log
