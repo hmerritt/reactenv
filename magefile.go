@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"hmerritt/reactenv/version"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/magefile/mage/mg"
@@ -180,4 +182,55 @@ func UpdateDeps() error {
 		{"go", "mod", "vendor"},
 		{"go", "mod", "tidy"},
 	})
+}
+
+// Bumps (syncs) patch version to the commit count (see `version/version_base.go`)
+func BumpVersion() error {
+	log := NewLogger()
+	defer log.End()
+
+	// Get the total commit count
+	commitCountString, err := sh.Output("git", "rev-list", "--count", "HEAD")
+
+	if err != nil {
+		return log.Error("failed to get commit count:", err)
+	}
+
+	commitCount, err := strconv.Atoi(commitCountString)
+
+	if err != nil {
+		return log.Error("failed to parse commit count:", commitCountString, err)
+	}
+
+	versionFile := "version/version_base.go"
+	versionFileContent, err := os.ReadFile(versionFile)
+
+	if err != nil {
+		return log.Error("failed open version file:", err)
+	}
+
+	// Extract current patch version
+	versionMatch := regexp.MustCompile(`= "(\d+).(\d+).(\d+)"`).FindStringSubmatch(string(versionFileContent))
+
+	if len(versionMatch) < 4 {
+		return log.Error("failed to parse version:", versionFile, versionMatch)
+	}
+
+	majorVersion := versionMatch[1]
+	minorVersion := versionMatch[2]
+	patchVersionCurrent := versionMatch[3]
+	patchVersion := commitCount
+
+	versionCurrent := fmt.Sprintf("%s.%s.%s", majorVersion, minorVersion, patchVersionCurrent)
+	versionNew := fmt.Sprintf("%s.%s.%d", majorVersion, minorVersion, patchVersion)
+	log.Info("bumping version", versionCurrent, "->", versionNew)
+
+	// Update version file
+	versionFileContent = regexp.MustCompile(`= "\d+.\d+.\d+"`).ReplaceAll(versionFileContent, []byte(fmt.Sprintf(`= "%s.%s.%d"`, majorVersion, minorVersion, patchVersion)))
+
+	if err := os.WriteFile(versionFile, versionFileContent, 0644); err != nil {
+		return log.Error("failed to write version file:", err)
+	}
+
+	return nil
 }
