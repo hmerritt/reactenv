@@ -1,4 +1,4 @@
-const ReactenvWebpackPlugin = require("./reactenv-webpack-plugin");
+const ReactenvWebpackPlugin = require("../../packages/plugin-webpack/reactenv-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const path = require("path");
 const dotenv = require("dotenv").config({ path: __dirname + "/.env" });

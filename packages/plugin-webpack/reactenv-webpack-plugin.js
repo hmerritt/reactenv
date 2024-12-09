@@ -1,5 +1,3 @@
-const webpack = require("webpack");
-
 class ReactEnvReplacementPlugin {
     /**
      * @param {(string | string[] | Record<string, any>)[]} keys keys
@@ -34,7 +32,7 @@ class ReactEnvReplacementPlugin {
                 definitions = this.onBuild(definitions);
             } else {
                 console.debug("[reactenv]", "mode: development");
-                definitions = this.onDev(definitions);
+                definitions = this.onDev(definitions, compiler);
             }
 
             // Add the plugin to the webpack configuration
@@ -67,7 +65,9 @@ class ReactEnvReplacementPlugin {
      * Apply development environment variables, mimics `webpack.EnvironmentPlugin`
      * @returns {Record<string, CodeValue>}
      */
-    onDev(definitions) {
+    onDev(definitions, compiler) {
+        const { webpack } = compiler;
+
         for (const key of this.keys) {
             const value =
                 process.env[key] !== undefined
@@ -78,8 +78,8 @@ class ReactEnvReplacementPlugin {
                 compiler.hooks.thisCompilation.tap(this.pluginName, (compilation) => {
                     const error = new webpack.WebpackError(
                         `EnvironmentPlugin - ${key} environment variable is undefined.\n\n` +
-                            "You can pass an object with default values to suppress this warning.\n" +
-                            "See https://webpack.js.org/plugins/environment-plugin for example.",
+                        "You can pass an object with default values to suppress this warning.\n" +
+                        "See https://webpack.js.org/plugins/environment-plugin for example.",
                     );
 
                     error.name = "EnvVariableNotDefinedError";
