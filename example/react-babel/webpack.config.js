@@ -4,10 +4,10 @@ var webpack = require("webpack");
 const path = require("path");
 
 const dotenv = require("dotenv").config({ path: __dirname + "/.env" });
-const isDevelopment = process.env.NODE_ENV !== "production";
 
 module.exports = {
     entry: "./src/index.js",
+    mode: "development",
     output: {
         filename: "bundle.[fullhash].js",
         path: path.resolve(__dirname, "dist"),
