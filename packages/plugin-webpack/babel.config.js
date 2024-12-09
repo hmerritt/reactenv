@@ -67,8 +67,8 @@ const config = {
 			test: /[\\/](__tests__|__fixtures__|packages[\\/]teskit[\\/]src)[\\/]/,
 		},
 	],
-	plugins: ['@babel/plugin-proposal-explicit-resource-management'],
 	presets: ['@babel/preset-typescript'],
+	plugins: ['@babel/plugin-proposal-explicit-resource-management', "add-module-exports"],
 };
 
 if (process.env.NODE_ENV !== 'test') {
