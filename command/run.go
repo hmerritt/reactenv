@@ -80,16 +80,10 @@ func (c *RunCommand) Run(args []string) int {
 
 	// Inject environment variables into .js files
 	for _, file := range javascriptFiles {
-		fmt.Println(file.Name())
-
-		// 1. Find all `reactenv.` occurrences
-		// 2. For each occurence, find the corresponding ENV variable
-		// 3. If any are missing, exit with error
-		// 4. Run replacement of all occurrences.
-
 		// Read .js file
 		filePath := path.Join(pathToAssets, file.Name())
 		fileContents, err := os.ReadFile(filePath)
+		fileContentsNew := make([]byte, 0, len(fileContents))
 
 		if err != nil {
 			c.UI.Error(fmt.Sprintf(`Error when reading "%s": %v`, file.Name(), err))
@@ -97,7 +91,7 @@ func (c *RunCommand) Run(args []string) int {
 		}
 
 		// Find every occurrence of `reactenv.`
-		occurrences := regexp.MustCompile(`(reactenv\.[a-zA-Z_$][0-9a-zA-Z_$]*)`).FindAllString(string(fileContents), -1)
+		occurrences := regexp.MustCompile(`(reactenv\.[a-zA-Z_$][0-9a-zA-Z_$]*)`).FindAllStringIndex(string(fileContents), -1)
 		occurrenceValues := make([]string, len(occurrences))
 
 		if len(occurrences) == 0 {
@@ -107,7 +101,8 @@ func (c *RunCommand) Run(args []string) int {
 		// For each occurrence, find the corresponding environment variable,
 		// exits if any environment variable is not set.
 		for index, occurrence := range occurrences {
-			envName := strings.Replace(occurrence, "reactenv.", "", 1)
+			occurrenceValue := string(fileContents[occurrence[0]:occurrence[1]])
+			envName := strings.Replace(occurrenceValue, "reactenv.", "", 1)
 			envValue, envExists := os.LookupEnv(envName)
 
 			if !envExists {
@@ -119,13 +114,19 @@ func (c *RunCommand) Run(args []string) int {
 		}
 
 		// Run replacement of all occurrences
+		lastIndex := 0
 		for index, occurrence := range occurrences {
 			envValue := occurrenceValues[index]
-			fileContents = regexp.MustCompile(fmt.Sprintf("\"%s\"", occurrence)).ReplaceAll(fileContents, []byte(fmt.Sprintf("\"%s\"", envValue)))
+			start, end := occurrence[0], occurrence[1]
+
+			fileContentsNew = append(fileContentsNew, fileContents[lastIndex:start]...)
+			fileContentsNew = append(fileContentsNew, envValue...)
+			lastIndex = end
 		}
+		fileContentsNew = append(fileContentsNew, fileContents[lastIndex:]...)
 
 		// Write .js file
-		if err := os.WriteFile(filePath, fileContents, 0644); err != nil {
+		if err := os.WriteFile(filePath, fileContentsNew, 0644); err != nil {
 			c.UI.Error(fmt.Sprintf(`Error when writing to file "%s": %v`, filePath, err))
 			os.Exit(1)
 		}
