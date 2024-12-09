@@ -1183,6 +1183,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@hmerritt/reactenv-webpack@npm:^0.5.5":
+  version: 0.5.5
+  resolution: "@hmerritt/reactenv-webpack@npm:0.5.5"
+  peerDependencies:
+    webpack: ^5.97.1
+  checksum: 10/11ab28a367013ba5c87c38ebbd1e9cffbad4e736e61de207d21c105c295c0c500af4cb311816decb2d6a4abbb644cb51deec035e48bdef199caa7642ea2e428f
+  languageName: node
+  linkType: hard
+
 "@isaacs/cliui@npm:^8.0.2":
   version: 8.0.2
   resolution: "@isaacs/cliui@npm:8.0.2"
@@ -4396,6 +4405,7 @@ __metadata:
     "@babel/core": "npm:^7.26.0"
     "@babel/preset-env": "npm:^7.26.0"
     "@babel/preset-react": "npm:^7.26.3"
+    "@hmerritt/reactenv-webpack": "npm:^0.5.5"
     babel-loader: "npm:^9.2.1"
     css-loader: "npm:^7.1.2"
     dotenv: "npm:^16.4.7"

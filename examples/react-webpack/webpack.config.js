@@ -1,9 +1,9 @@
-const ReactenvWebpackPlugin = require("../../packages/plugin-webpack/lib");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const path = require("path");
 const dotenv = require("dotenv").config({ path: __dirname + "/.env" });
 
-const webpack = require("webpack");
+const ReactenvWebpackPlugin = require("@hmerritt/reactenv-webpack");
+// const ReactenvWebpackPlugin = require("../../packages/plugin-webpack/lib");
 
 module.exports = {
 	entry: "./src/index.js",
@@ -18,7 +18,6 @@ module.exports = {
 		new HtmlWebpackPlugin({
 			template: "./src/index.html",
 		}),
-		new webpack.EnvironmentPlugin
 	],
 	resolve: {
 		modules: [__dirname, "src", "node_modules"],
