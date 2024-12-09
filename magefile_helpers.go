@@ -73,7 +73,13 @@ func RunStream(args []string, dir string, addPadding bool) error {
 		fmt.Println("")
 	}
 
-	return cmd.Err
+	exitCode := cmd.ProcessState.ExitCode()
+
+	if exitCode != 0 {
+		return fmt.Errorf("command exited with code %d", exitCode)
+	}
+
+	return nil
 }
 
 // Runs multiple cmd commands one-by-one

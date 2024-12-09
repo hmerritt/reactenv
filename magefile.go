@@ -22,9 +22,12 @@ func (Package) Cli(target string) error {
 	currentDir, _ := os.Getwd()
 	cliDir := path.Join(currentDir, "packages", "cli")
 
-	err := RunStream([]string{"mage", "-v", target}, cliDir, true)
+	if err := RunStream([]string{"mage", "-v", target}, cliDir, true); err != nil {
+		return log.Error(err)
+	}
+
 	log.End()
-	return err
+	return nil
 }
 
 func (Package) Webpack(target string) error {
@@ -33,9 +36,12 @@ func (Package) Webpack(target string) error {
 	currentDir, _ := os.Getwd()
 	cliDir := path.Join(currentDir, "packages", "plugin-webpack")
 
-	err := RunStream([]string{"yarn", target}, cliDir, true)
+	if err := RunStream([]string{"yarn", target}, cliDir, true); err != nil {
+		return log.Error(err)
+	}
+
 	log.End()
-	return err
+	return nil
 }
 
 // ----------------------------------------------------------------------------
