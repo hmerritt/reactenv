@@ -92,7 +92,7 @@ func (c *RunCommand) Run(args []string) int {
 
 		// Find every occurrence of `reactenv.`
 		occurrences := regexp.MustCompile(`(reactenv\.[a-zA-Z_$][0-9a-zA-Z_$]*)`).FindAllStringIndex(string(fileContents), -1)
-		occurrenceValues := make([]string, len(occurrences))
+		occurrenceReplacementValues := make([]string, len(occurrences))
 
 		if len(occurrences) == 0 {
 			continue
@@ -101,8 +101,8 @@ func (c *RunCommand) Run(args []string) int {
 		// For each occurrence, find the corresponding environment variable,
 		// exits if any environment variable is not set.
 		for index, occurrence := range occurrences {
-			occurrenceValue := string(fileContents[occurrence[0]:occurrence[1]])
-			envName := strings.Replace(occurrenceValue, "reactenv.", "", 1)
+			occurrenceText := string(fileContents[occurrence[0]:occurrence[1]])
+			envName := strings.Replace(occurrenceText, "reactenv.", "", 1)
 			envValue, envExists := os.LookupEnv(envName)
 
 			if !envExists {
@@ -110,13 +110,13 @@ func (c *RunCommand) Run(args []string) int {
 				os.Exit(1)
 			}
 
-			occurrenceValues[index] = envValue
+			occurrenceReplacementValues[index] = envValue
 		}
 
 		// Run replacement of all occurrences
 		lastIndex := 0
 		for index, occurrence := range occurrences {
-			envValue := occurrenceValues[index]
+			envValue := occurrenceReplacementValues[index]
 			start, end := occurrence[0], occurrence[1]
 
 			fileContentsNew = append(fileContentsNew, fileContents[lastIndex:start]...)
