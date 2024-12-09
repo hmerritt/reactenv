@@ -120,8 +120,7 @@ func (c *RunCommand) Run(args []string) int {
 		// Run replacement of all occurrences
 		for index, occurrence := range occurrences {
 			envValue := occurrenceValues[index]
-			fmt.Println(occurrence, envValue)
-			fileContents = regexp.MustCompile(occurrence).ReplaceAll(fileContents, []byte(envValue))
+			fileContents = regexp.MustCompile(fmt.Sprintf("\"%s\"", occurrence)).ReplaceAll(fileContents, []byte(fmt.Sprintf("\"%s\"", envValue)))
 		}
 
 		// Write .js file
