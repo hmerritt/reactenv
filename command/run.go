@@ -58,28 +58,28 @@ func (c *RunCommand) Run(args []string) int {
 	}
 
 	// Find all .js files
-	assetFiles, err := os.ReadDir(pathToAssets)
-	jsFiles := make([]fs.DirEntry, 0, len(assetFiles))
+	files, err := os.ReadDir(pathToAssets)
+	javascriptFiles := make([]fs.DirEntry, 0, len(files))
 
 	if err != nil {
 		c.UI.Error("Failed to read asset directory files.")
 		os.Exit(1)
 	}
 
-	for _, file := range assetFiles {
+	for _, file := range files {
 		if file.IsDir() || !strings.HasSuffix(file.Name(), ".js") {
 			continue
 		}
-		jsFiles = append(jsFiles, file)
+		javascriptFiles = append(javascriptFiles, file)
 	}
 
-	if len(jsFiles) == 0 {
-		c.UI.Error("No .js files found.")
+	if len(javascriptFiles) == 0 {
+		c.UI.Error("No JavaScript (.js) files found.")
 		os.Exit(1)
 	}
 
 	// Inject environment variables into .js files
-	for _, file := range jsFiles {
+	for _, file := range javascriptFiles {
 		fmt.Println(file.Name())
 
 		// 1. Find all `reactenv.` occurrences
@@ -88,10 +88,11 @@ func (c *RunCommand) Run(args []string) int {
 		// 4. Run replacement of all occurrences.
 
 		// Read .js file
-		fileContents, err := os.ReadFile(path.Join(pathToAssets, file.Name()))
+		filePath := path.Join(pathToAssets, file.Name())
+		fileContents, err := os.ReadFile(filePath)
 
 		if err != nil {
-			c.UI.Error("Failed to read .js file.")
+			c.UI.Error(fmt.Sprintf(`Error when reading "%s": %v`, file.Name(), err))
 			os.Exit(1)
 		}
 
@@ -124,8 +125,8 @@ func (c *RunCommand) Run(args []string) int {
 		}
 
 		// Write .js file
-		if err := os.WriteFile(path.Join(pathToAssets, file.Name()), fileContents, 0644); err != nil {
-			c.UI.Error("Failed to write .js file.")
+		if err := os.WriteFile(filePath, fileContents, 0644); err != nil {
+			c.UI.Error(fmt.Sprintf(`Error when writing to file "%s": %v`, filePath, err))
 			os.Exit(1)
 		}
 	}
