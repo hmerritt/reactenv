@@ -1,19 +1,11 @@
 
-**/*.exe
-
-bin/
-backup/
-backups/
-target/
 .idea/
 .vagrant/
-vendor/
-example/example-project
+bin/
+target/
 
+**/*.exe
 *.lnk
 *.log
 *.tar
 *.tar.gz
-
-# misc
-.env
