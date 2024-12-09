@@ -1,0 +1,30 @@
+{
+    "name": "react-babel",
+    "version": "1.0.0",
+    "main": "index.js",
+    "scripts": {
+        "start": "webpack serve --open",
+        "build": "webpack --config webpack.config.js --mode production"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "description": "",
+    "packageManager": "yarn@4.5.3+sha512.3003a14012e2987072d244c720506549c1aab73ee728208f1b2580a9fd67b92d61ba6b08fe93f6dce68fd771e3af1e59a0afa28dd242dd0940d73b95fedd4e90",
+    "devDependencies": {
+        "@babel/core": "^7.26.0",
+        "@babel/preset-env": "^7.26.0",
+        "@babel/preset-react": "^7.26.3",
+        "babel-loader": "^9.2.1",
+        "css-loader": "^7.1.2",
+        "dotenv": "^16.4.7",
+        "file-loader": "^6.2.0",
+        "html-webpack-plugin": "^5.6.3",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "style-loader": "^4.0.0",
+        "webpack": "^5.97.1",
+        "webpack-cli": "^5.1.4",
+        "webpack-dev-server": "^5.1.0"
+    }
+}
