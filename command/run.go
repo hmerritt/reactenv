@@ -82,28 +82,50 @@ func (c *RunCommand) Run(args []string) int {
 	for _, file := range jsFiles {
 		fmt.Println(file.Name())
 
-		// ENV value
-		envName := "reactenv.NODE_ENV_TEST"
-		envValue := os.Getenv("ANDROID_HOME")
-
-		if envValue == "" {
-			c.UI.Error("Environment variable not found.")
-			os.Exit(1)
-		}
+		// 1. Find all `reactenv.` occurrences
+		// 2. For each occurence, find the corresponding ENV variable
+		// 3. If any are missing, exit with error
+		// 4. Run replacement of all occurrences.
 
 		// Read .js file
-		assetFile, err := os.ReadFile(path.Join(pathToAssets, file.Name()))
+		fileContents, err := os.ReadFile(path.Join(pathToAssets, file.Name()))
 
 		if err != nil {
 			c.UI.Error("Failed to read .js file.")
 			os.Exit(1)
 		}
 
-		// Inject environment variable into .js file
-		assetFile = regexp.MustCompile(envName).ReplaceAll(assetFile, []byte(fmt.Sprintf(envValue)))
+		// Find every occurrence of `reactenv.`
+		occurrences := regexp.MustCompile(`(reactenv\.[a-zA-Z_$][0-9a-zA-Z_$]*)`).FindAllString(string(fileContents), -1)
+		occurrenceValues := make([]string, len(occurrences))
+
+		if len(occurrences) == 0 {
+			continue
+		}
+
+		// For each occurrence, find the corresponding environment variable,
+		// exits if any environment variable is not set.
+		for index, occurrence := range occurrences {
+			envName := strings.Replace(occurrence, "reactenv.", "", 1)
+			envValue, envExists := os.LookupEnv(envName)
+
+			if !envExists {
+				c.UI.Error(fmt.Sprintf("Environment variable not set: %s", envName))
+				os.Exit(1)
+			}
+
+			occurrenceValues[index] = envValue
+		}
+
+		// Run replacement of all occurrences
+		for index, occurrence := range occurrences {
+			envValue := occurrenceValues[index]
+			fmt.Println(occurrence, envValue)
+			fileContents = regexp.MustCompile(occurrence).ReplaceAll(fileContents, []byte(envValue))
+		}
 
 		// Write .js file
-		if err := os.WriteFile(path.Join(pathToAssets, file.Name()), assetFile, 0644); err != nil {
+		if err := os.WriteFile(path.Join(pathToAssets, file.Name()), fileContents, 0644); err != nil {
 			c.UI.Error("Failed to write .js file.")
 			os.Exit(1)
 		}
