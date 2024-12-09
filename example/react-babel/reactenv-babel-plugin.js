@@ -19,7 +19,7 @@ const envBabelPlugin = () => {
                     const envVarName = path.get("property").node.name;
 
                     // Replace process.env.X with "reactenv.X"
-                    path.replaceWith(t.stringLiteral(`reactenv.${envVarName}`));
+                    path.replaceWith(t.stringLiteral(`__reactenv.${envVarName}`));
                 }
             },
         },

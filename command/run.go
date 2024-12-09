@@ -91,7 +91,7 @@ func (c *RunCommand) Run(args []string) int {
 		}
 
 		// Find every occurrence of `reactenv.`
-		occurrences := regexp.MustCompile(`(reactenv\.[a-zA-Z_$][0-9a-zA-Z_$]*)`).FindAllStringIndex(string(fileContents), -1)
+		occurrences := regexp.MustCompile(`(__reactenv\.[a-zA-Z_$][0-9a-zA-Z_$]*)`).FindAllStringIndex(string(fileContents), -1)
 		occurrenceReplacementValues := make([]string, len(occurrences))
 
 		if len(occurrences) == 0 {
@@ -102,7 +102,7 @@ func (c *RunCommand) Run(args []string) int {
 		// exits if any environment variable is not set.
 		for index, occurrence := range occurrences {
 			occurrenceText := string(fileContents[occurrence[0]:occurrence[1]])
-			envName := strings.Replace(occurrenceText, "reactenv.", "", 1)
+			envName := strings.Replace(occurrenceText, "__reactenv.", "", 1)
 			envValue, envExists := os.LookupEnv(envName)
 
 			if !envExists {

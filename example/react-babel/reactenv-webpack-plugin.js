@@ -57,7 +57,7 @@ class ReactEnvReplacementPlugin {
 
         // Convert our environment variables to the correct format
         appEnv.forEach((key) => {
-            definitions[`process.env.${key}`] = JSON.stringify(`reactenv.${key}`);
+            definitions[`process.env.${key}`] = JSON.stringify(`__reactenv.${key}`);
         });
 
         return definitions;
