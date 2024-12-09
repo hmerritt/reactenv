@@ -1,8 +1,10 @@
 
+.yarn/
 .idea/
 .vagrant/
 bin/
 target/
+node_modules/
 
 **/*.exe
 *.lnk
