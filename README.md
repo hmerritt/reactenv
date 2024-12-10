@@ -118,7 +118,7 @@ FROM nginx:alpine
 COPY --from=build /app/build /usr/share/nginx/html
 EXPOSE 80
 RUN apk add --no-cache wget unzip libc6-compat
-RUN wget https://github.com/hmerritt/reactenv/releases/download/v0.1.47/reactenv_0.1.47_linux_amd64.zip \
+RUN wget https://github.com/hmerritt/reactenv/releases/download/0.1.47/reactenv_0.1.47_linux_amd64.zip \
     && unzip reactenv_0.1.47_linux_amd64.zip \
     && chmod +x reactenv \
     && mv reactenv /usr/local/bin/ \
