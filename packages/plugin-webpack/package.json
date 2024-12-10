@@ -1,0 +1,54 @@
+{
+    "name": "@hmerritt/reactenv-webpack",
+    "version": "0.1.42",
+    "description": "The webpack plugin for reactenv, an experimental solution to inject env variables after a build.",
+    "license": "MIT",
+    "main": "lib/index.js",
+    "module": "esm/index.js",
+    "types": "types/index.d.ts",
+    "exports": {
+        "require": "./lib/index.js",
+        "import": "./esm/index.js",
+        "types": "./types/index.d.ts",
+        "default": "./esm/index.js"
+    },
+    "files": [
+        "esm/",
+        "lib/",
+        "types/"
+    ],
+    "scripts": {
+        "build": "yarn build:esm && yarn build:lib && yarn build:types",
+        "build:esm": "babel src --out-dir esm --extensions '.js,.jsx,.ts,.tsx' --source-maps --delete-dir-on-start",
+        "build:lib": "cross-env NODE_ENV=legacy babel src --out-dir lib --extensions '.js,.jsx,.ts,.tsx' --source-maps --delete-dir-on-start",
+        "build:types": "tsc --project ./tsconfig.lib.json --baseUrl . --rootDir ./src"
+    },
+    "devDependencies": {
+        "@babel/cli": "^7.26.4",
+        "@babel/core": "^7.26.0",
+        "@babel/plugin-proposal-explicit-resource-management": "^7.25.9",
+        "@babel/preset-env": "^7.26.0",
+        "@babel/preset-react": "^7.26.3",
+        "@babel/preset-typescript": "^7.26.0",
+        "@types/babel__core": "^7",
+        "@types/node": "^22.10.1",
+        "babel-plugin-add-module-exports": "^1.0.4",
+        "cross-env": "^7.0.3",
+        "typescript": "^5.7.2",
+        "webpack": "^5.97.1"
+    },
+    "peerDependencies": {
+        "webpack": "^5.97.1"
+    },
+    "engines": {
+        "node": ">=16.0.0"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/hmerritt/reactenv.git"
+    },
+    "packageManager": "yarn@4.5.3+sha512.3003a14012e2987072d244c720506549c1aab73ee728208f1b2580a9fd67b92d61ba6b08fe93f6dce68fd771e3af1e59a0afa28dd242dd0940d73b95fedd4e90"
+}

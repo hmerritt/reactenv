@@ -1,0 +1,15 @@
+
+.yarn/
+.idea/
+.vagrant/
+bin/**/*
+target/
+node_modules/
+
+**/*.exe
+*.lnk
+*.log
+*.tar
+*.tar.gz
+
+!packages/reactenv/bin/reactenv

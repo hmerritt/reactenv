@@ -1,0 +1,22 @@
+{
+    "name": "@hmerritt/reactenv",
+    "version": "0.1.42",
+    "description": "reactenv, an experimental solution to inject env variables after a build.",
+    "license": "MIT",
+    "bin": {
+        "reactenv": "bin/reactenv"
+    },
+    "scripts": {
+        "postinstall": "node install.js"
+    },
+    "engines": {
+        "node": ">=18"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/hmerritt/reactenv.git"
+    }
+}

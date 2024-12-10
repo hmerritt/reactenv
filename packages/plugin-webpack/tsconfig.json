@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "allowSyntheticDefaultImports": true,
+        "declaration": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "jsx": "react",
+        "preserveWatchOutput": true,
+        "skipDefaultLibCheck": true,
+        "skipLibCheck": true,
+        "strict": true,
+        "lib": ["DOM", "ESNext", "esnext.disposable"],
+        "module": "CommonJS",
+        "moduleResolution": "Node",
+        "target": "es2022"
+    },
+    "exclude": ["node_modules"],
+    "display": "Node Next"
+}
