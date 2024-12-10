@@ -2,7 +2,7 @@
 .yarn/
 .idea/
 .vagrant/
-bin/
+bin/**/*
 target/
 node_modules/
 
@@ -11,3 +11,5 @@ node_modules/
 *.log
 *.tar
 *.tar.gz
+
+!packages/reactenv/bin/reactenv
