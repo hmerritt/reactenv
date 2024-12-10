@@ -1,6 +1,6 @@
 {
     "name": "@hmerritt/reactenv-webpack",
-    "version": "0.1.30",
+    "version": "0.1.34",
     "license": "MIT",
     "main": "lib/index.js",
     "module": "esm/index.js",

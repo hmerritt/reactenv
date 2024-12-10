@@ -1,6 +1,6 @@
 {
     "name": "@hmerritt/reactenv",
-    "version": "0.1.30",
+    "version": "0.1.34",
     "license": "MIT",
     "main": "lib/main.js",
     "types": "lib/main.d.ts",
@@ -11,14 +11,14 @@
         "postinstall": "node install.js"
     },
     "optionalDependencies": {
-        "@hmerritt/reactenv/darwin-arm64": "0.1.30",
-        "@hmerritt/reactenv/darwin-x64": "0.1.30",
-        "@hmerritt/reactenv/linux-arm": "0.1.30",
-        "@hmerritt/reactenv/linux-arm64": "0.1.30",
-        "@hmerritt/reactenv/linux-x64": "0.1.30",
-        "@hmerritt/reactenv/win32-arm64": "0.1.30",
-        "@hmerritt/reactenv/win32-ia32": "0.1.30",
-        "@hmerritt/reactenv/win32-x64": "0.1.30"
+        "@hmerritt/reactenv/darwin-arm64": "0.1.34",
+        "@hmerritt/reactenv/darwin-x64": "0.1.34",
+        "@hmerritt/reactenv/linux-arm": "0.1.34",
+        "@hmerritt/reactenv/linux-arm64": "0.1.34",
+        "@hmerritt/reactenv/linux-x64": "0.1.34",
+        "@hmerritt/reactenv/win32-arm64": "0.1.34",
+        "@hmerritt/reactenv/win32-ia32": "0.1.34",
+        "@hmerritt/reactenv/win32-x64": "0.1.34"
     },
     "engines": {
         "node": ">=18"
