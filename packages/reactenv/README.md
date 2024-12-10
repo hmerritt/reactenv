@@ -1,4 +1,4 @@
-# @hmerritt/reactenv
+# @reactenv/cli
 
 The package contains [`reactenv`](https://github.com/hmerritt/reactenv). See [https://github.com/hmerritt/reactenv](https://github.com/hmerritt/reactenv) for details.
 
@@ -6,9 +6,9 @@ The package contains [`reactenv`](https://github.com/hmerritt/reactenv). See [ht
 
 ```sh
 # npm
-npm i -D @hmerritt/reactenv
+npm i -D @reactenv/cli
 # yarn
-yarn add -D @hmerritt/reactenv
+yarn add -D @reactenv/cli
 # pnpm
-pnpm add -D @hmerritt/reactenv
+pnpm add -D @reactenv/cli
 ```

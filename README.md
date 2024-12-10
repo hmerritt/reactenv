@@ -13,7 +13,7 @@ Useful for creating generic Docker images. Build your app once and add build fil
 -   Injection is strict by default, and will error if any values are missing
 -   Blazing fast environment variable injection (~0.5ms for a basic react app)
 -   (Optional) Bundler plugins to automate processing `process.env` values during build
-    -   [Webpack plugin `@hmerritt/reactenv-webpack`](https://github.com/hmerritt/reactenv/tree/master/packages/plugin-webpack)
+    -   [Webpack plugin `@reactenv/webpack`](https://github.com/hmerritt/reactenv/tree/master/packages/plugin-webpack)
 
 ### Jump to:
 
@@ -31,7 +31,7 @@ Grab the latest binary from the releases page [here](https://github.com/hmerritt
 Or install globally from npm:
 
 ```sh
-npm i -g @hmerritt/reactenv
+npm i -g @reactenv/cli
 ```
 
 Verify install by running `reactenv`, it should print the help:
@@ -51,7 +51,7 @@ The magic happens at build-time. You have two options:
 1. Manually set the value of every env variable to `__reactenv.<name>` at build (this option offers the most control, and is potentially more robust)
 
 2. Use one of the bundler plugins to do it for you
-    - [Webpack plugin `@hmerritt/reactenv-webpack`](https://github.com/hmerritt/reactenv/tree/master/packages/plugin-webpack)
+    - [Webpack plugin `@reactenv/webpack`](https://github.com/hmerritt/reactenv/tree/master/packages/plugin-webpack)
     - (more coming soon)
 
 ### Injection via `reactenv`
@@ -118,11 +118,11 @@ FROM nginx:alpine
 COPY --from=build /app/build /usr/share/nginx/html
 EXPOSE 80
 RUN apk add --no-cache wget unzip libc6-compat
-RUN wget https://github.com/hmerritt/reactenv/releases/download/v0.1.42/reactenv_0.1.42_linux_amd64.zip \
-    && unzip reactenv_0.1.42_linux_amd64.zip \
+RUN wget https://github.com/hmerritt/reactenv/releases/download/v0.1.46/reactenv_0.1.46_linux_amd64.zip \
+    && unzip reactenv_0.1.46_linux_amd64.zip \
     && chmod +x reactenv \
     && mv reactenv /usr/local/bin/ \
-    && rm reactenv_0.1.42_linux_amd64.zip
+    && rm reactenv_0.1.46_linux_amd64.zip
 ENTRYPOINT ["sh", "docker-entrypoint.sh"]
 ```
 
