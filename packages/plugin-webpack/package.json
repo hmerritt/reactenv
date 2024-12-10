@@ -1,6 +1,6 @@
 {
     "name": "@hmerritt/reactenv-webpack",
-    "version": "0.1.34",
+    "version": "0.1.40",
     "description": "The webpack plugin for reactenv, an experimental solution to inject env variables after a build.",
     "license": "MIT",
     "main": "lib/index.js",
