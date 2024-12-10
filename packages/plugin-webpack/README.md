@@ -1,6 +1,8 @@
 # @hmerritt/reactenv-webpack
 
-The package contains reactenv plugin for Webpack.
+The package contains [`reactenv`](https://github.com/hmerritt/reactenv) plugin for Webpack.
+
+> See [`reactenv`](https://github.com/hmerritt/reactenv) repo for more information.
 
 ## Installation
 
@@ -15,7 +17,7 @@ pnpm add -D @hmerritt/reactenv-webpack
 
 ## Usage
 
-See [example webpack](../../examples/react-webpack/README.md) for an example project.
+See [example webpack](https://github.com/hmerritt/reactenv/blob/master/examples/react-webpack/README.md) for an example project.
 
 ---
 
