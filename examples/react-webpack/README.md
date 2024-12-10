@@ -1,6 +1,6 @@
-# @hmerritt/reactenv-webpack example
+# @reactenv/webpack example
 
-This example uses the `@hmerritt/reactenv-webpack` plugin for Webpack.
+This example uses the `@reactenv/webpack` plugin for Webpack.
 
 ## Local setup
 
@@ -37,7 +37,7 @@ When running locally with `yarn start`, the plugin will passthrough and env vari
 
 ---
 
-When building with `yarn build`, the plugin with replace all `process.env.*` values with a static string that can be replaced at a later time.
+When building with `yarn build`, the plugin with replace all `process.env.<name>` values with a static string that can be replaced at a later time.
 
 Before serving the build, you need to run the `reactenv` cli to inject the desired environment variables.
 

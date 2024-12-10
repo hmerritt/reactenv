@@ -2,7 +2,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const path = require("path");
 const dotenv = require("dotenv").config({ path: __dirname + "/.env" });
 
-const ReactenvWebpackPlugin = require("@hmerritt/reactenv-webpack");
+const ReactenvWebpackPlugin = require("@reactenv/webpack");
 // const ReactenvWebpackPlugin = require("../../packages/plugin-webpack/lib");
 
 module.exports = {

@@ -1183,15 +1183,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@hmerritt/reactenv-webpack@npm:^0.5.5":
-  version: 0.5.5
-  resolution: "@hmerritt/reactenv-webpack@npm:0.5.5"
-  peerDependencies:
-    webpack: ^5.97.1
-  checksum: 10/11ab28a367013ba5c87c38ebbd1e9cffbad4e736e61de207d21c105c295c0c500af4cb311816decb2d6a4abbb644cb51deec035e48bdef199caa7642ea2e428f
-  languageName: node
-  linkType: hard
-
 "@isaacs/cliui@npm:^8.0.2":
   version: 8.0.2
   resolution: "@isaacs/cliui@npm:8.0.2"
@@ -1332,6 +1323,15 @@ __metadata:
   version: 0.11.0
   resolution: "@pkgjs/parseargs@npm:0.11.0"
   checksum: 10/115e8ceeec6bc69dff2048b35c0ab4f8bbee12d8bb6c1f4af758604586d802b6e669dcb02dda61d078de42c2b4ddce41b3d9e726d7daa6b4b850f4adbf7333ff
+  languageName: node
+  linkType: hard
+
+"@reactenv/webpack@npm:^0.1.47":
+  version: 0.1.47
+  resolution: "@reactenv/webpack@npm:0.1.47"
+  peerDependencies:
+    webpack: ^5.97.1
+  checksum: 10/d3788f344f3e3ea7523fc926ea5011d0ae96b042d61259b3bd7de2747176aa4d23b6b66a01b432b93dcdc3a7aec459b17c8dd0d06ba82b1fd31cb16c682547f6
   languageName: node
   linkType: hard
 
@@ -4405,7 +4405,7 @@ __metadata:
     "@babel/core": "npm:^7.26.0"
     "@babel/preset-env": "npm:^7.26.0"
     "@babel/preset-react": "npm:^7.26.3"
-    "@hmerritt/reactenv-webpack": "npm:^0.5.5"
+    "@reactenv/webpack": "npm:^0.1.47"
     babel-loader: "npm:^9.2.1"
     css-loader: "npm:^7.1.2"
     dotenv: "npm:^16.4.7"
