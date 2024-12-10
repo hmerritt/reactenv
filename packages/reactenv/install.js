@@ -30,7 +30,7 @@ function getPlatformPackage() {
 	const binary = platformSupport[arch]
 	if (!binary) throw new Error(`Unsupported architecture: ${arch}`)
 
-	return `reactenv-${binary}`
+	return `cli-${binary}`
 }
 
 function fetch(url) {
@@ -73,7 +73,7 @@ function extractFileFromTarGzip(buffer, subpath) {
 }
 
 async function downloadDirectlyFromNPM(packageName, subpath, binPath) {
-	const url = `https://registry.npmjs.org/@hmerritt/${packageName}/-/${packageName}-${packageVersion}.tgz`;
+	const url = `https://registry.npmjs.org/@reactenv/${packageName}/-/${packageName}-${packageVersion}.tgz`;
 	console.debug(`[reactenv] Trying to download ${JSON.stringify(url)}`);
 	try {
 		fs.writeFileSync(binPath, extractFileFromTarGzip(await fetch(url), subpath));

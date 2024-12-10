@@ -1,4 +1,4 @@
-# @hmerritt/cli
+# @reactenv/cli
 
 The package contains the source code for the [`reactenv`](https://github.com/hmerritt/reactenv) cli.
 
