@@ -1,6 +1,6 @@
 {
     "name": "@hmerritt/reactenv-linux-x64",
-    "version": "0.1.40",
+    "version": "0.1.42",
     "description": "The Linux 64-bit binary for reactenv, an experimental solution to inject env variables after a build.",
     "license": "MIT",
     "os": [

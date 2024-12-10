@@ -1,6 +1,9 @@
 const os = require('os')
 const path = require('path')
 const fs = require('fs')
+const https = require("https");
+const zlib = require("zlib");
+const packageVersion = require(path.join(__dirname, "package.json")).version;
 
 function getPlatformPackage() {
 	const platform = os.platform()
@@ -27,27 +30,70 @@ function getPlatformPackage() {
 	const binary = platformSupport[arch]
 	if (!binary) throw new Error(`Unsupported architecture: ${arch}`)
 
-	return `@hmerritt/reactenv-${binary}`
+	return `reactenv-${binary}`
+}
+
+function fetch(url) {
+	return new Promise((resolve, reject) => {
+		https.get(url, (res) => {
+			if ((res.statusCode === 301 || res.statusCode === 302) && res.headers.location)
+				return fetch(res.headers.location).then(resolve, reject);
+
+			if (res.statusCode !== 200)
+				return reject(new Error(`Server responded with ${res.statusCode}`));
+
+			let chunks = [];
+			res.on("data", (chunk) => chunks.push(chunk));
+			res.on("end", () => resolve(Buffer.concat(chunks)));
+		}).on("error", reject);
+	});
+}
+
+function extractFileFromTarGzip(buffer, subpath) {
+	try {
+		buffer = zlib.unzipSync(buffer);
+	} catch (err) {
+		throw new Error(`[reactenv] Invalid gzip data in archive: ${err && err.message || err}`);
+	}
+
+	let str = (i, n) => String.fromCharCode(...buffer.subarray(i, i + n)).replace(/\0.*$/, "");
+	let offset = 0;
+	subpath = `package/${subpath}`;
+	while (offset < buffer.length) {
+		let name = str(offset, 100);
+		let size = parseInt(str(offset + 124, 12), 8);
+		offset += 512;
+		if (!isNaN(size)) {
+			if (name === subpath) return buffer.subarray(offset, offset + size);
+			offset += size + 511 & ~511;
+		}
+	}
+
+	throw new Error(`[reactenv] Could not find ${JSON.stringify(subpath)} in archive`);
+}
+
+async function downloadDirectlyFromNPM(packageName, subpath, binPath) {
+	const url = `https://registry.npmjs.org/@hmerritt/${packageName}/-/${packageName}-${packageVersion}.tgz`;
+	console.debug(`[reactenv] Trying to download ${JSON.stringify(url)}`);
+	try {
+		fs.writeFileSync(binPath, extractFileFromTarGzip(await fetch(url), subpath));
+		fs.chmodSync(binPath, 493);
+	} catch (e) {
+		console.error(`[reactenv] Failed to download ${JSON.stringify(url)}: ${e && e.message || e}`);
+		throw e;
+	}
 }
 
 async function install() {
 	try {
 		const platformPackage = getPlatformPackage()
-		const binaryPath = require.resolve(platformPackage)
+		const binaryFileName = `reactenv${(os.platform() === 'win32' ? '.exe' : '')}`
 
-		const binDir = path.join(__dirname, 'bin')
-		if (!fs.existsSync(binDir)) {
-			fs.mkdirSync(binDir, { recursive: true })
-		}
-
-		// Copy the binary to the bin directory
-		const destPath = path.join(binDir, '_reactenv' + (os.platform() === 'win32' ? '.exe' : ''))
-		fs.copyFileSync(binaryPath, destPath)
-
-		// Make the binary executable (not needed on Windows)
-		if (os.platform() !== 'win32') {
-			fs.chmodSync(destPath, 0o755)
-		}
+		downloadDirectlyFromNPM(
+			platformPackage,
+			binaryFileName,
+			path.join(__dirname, `bin/_${binaryFileName}`)
+		)
 
 		console.log('[reactenv] Binary installed successfully')
 	} catch (error) {

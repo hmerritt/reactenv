@@ -1,6 +1,6 @@
 {
     "name": "@hmerritt/reactenv",
-    "version": "0.1.40",
+    "version": "0.1.42",
     "description": "reactenv, an experimental solution to inject env variables after a build.",
     "license": "MIT",
     "bin": {
@@ -8,10 +8,6 @@
     },
     "scripts": {
         "postinstall": "node install.js"
-    },
-    "optionalDependencies": {
-        "@hmerritt/reactenv-linux-x64": "0.1.40",
-        "@hmerritt/reactenv-win32-x64": "0.1.40"
     },
     "engines": {
         "node": ">=18"
