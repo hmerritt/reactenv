@@ -8,9 +8,9 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-.yarn
 dist
 dist-ssr
+.yarn
 *.local
 
 # Editor directories and files
