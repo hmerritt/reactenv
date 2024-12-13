@@ -233,34 +233,58 @@ func BumpVersion() error {
 		return log.Error("failed to parse commit count:", commitCountString, err)
 	}
 
-	versionFile := "version/version_base.go"
-	versionFileContent, err := os.ReadFile(versionFile)
-
-	if err != nil {
-		return log.Error("failed open version file:", err)
+	filesWithVersion := []string{
+		"version/version_base.go",
+		"npm/reactenv/package.json",
+		"npm/reactenv-darwin-arm64/package.json",
+		"npm/reactenv-darwin-x64/package.json",
+		"npm/reactenv-linux-arm64/package.json",
+		"npm/reactenv-linux-x64/package.json",
+		"npm/reactenv-win32-x64/package.json",
 	}
 
-	// Extract current patch version
-	versionMatch := regexp.MustCompile(`= "(\d+).(\d+).(\d+)"`).FindStringSubmatch(string(versionFileContent))
+	for _, versionFile := range filesWithVersion {
+		versionFileContent, err := os.ReadFile(versionFile)
 
-	if len(versionMatch) < 4 {
-		return log.Error("failed to parse version:", versionFile, versionMatch)
-	}
+		if err != nil {
+			return log.Error("failed open version file:", err)
+		}
 
-	majorVersion := versionMatch[1]
-	minorVersion := versionMatch[2]
-	patchVersionCurrent := versionMatch[3]
-	patchVersion := commitCount
+		// Change regex based on file type
+		var versionMatchRegex, versionReplaceRegex, versionReplaceSprintf string
+		switch path.Ext(versionFile) {
+		case ".go":
+			versionMatchRegex = `= "(\d+).(\d+).(\d+)"`
+			versionReplaceRegex = `= "\d+.\d+.\d+"`
+			versionReplaceSprintf = `= "%s.%s.%d"`
+		case ".json":
+			versionMatchRegex = `"version": "(\d+).(\d+).(\d+)"`
+			versionReplaceRegex = `"version": "\d+.\d+.\d+"`
+			versionReplaceSprintf = `"version": "%s.%s.%d"`
+		}
 
-	versionCurrent := fmt.Sprintf("%s.%s.%s", majorVersion, minorVersion, patchVersionCurrent)
-	versionNew := fmt.Sprintf("%s.%s.%d", majorVersion, minorVersion, patchVersion)
-	log.Info("bumping version", versionCurrent, "->", versionNew)
+		// Extract current patch version
+		versionMatch := regexp.MustCompile(versionMatchRegex).FindStringSubmatch(string(versionFileContent))
 
-	// Update version file
-	versionFileContent = regexp.MustCompile(`= "\d+.\d+.\d+"`).ReplaceAll(versionFileContent, []byte(fmt.Sprintf(`= "%s.%s.%d"`, majorVersion, minorVersion, patchVersion)))
+		if len(versionMatch) < 4 {
+			return log.Error("failed to parse version:", versionFile, versionMatch)
+		}
 
-	if err := os.WriteFile(versionFile, versionFileContent, 0644); err != nil {
-		return log.Error("failed to write version file:", err)
+		majorVersion := versionMatch[1]
+		minorVersion := versionMatch[2]
+		patchVersionCurrent := versionMatch[3]
+		patchVersion := commitCount
+
+		versionCurrent := fmt.Sprintf("%s.%s.%s", majorVersion, minorVersion, patchVersionCurrent)
+		versionNew := fmt.Sprintf("%s.%s.%d", majorVersion, minorVersion, patchVersion)
+		log.Info("bumping version", versionCurrent, "->", versionNew)
+
+		// Update version file
+		versionFileContent = regexp.MustCompile(versionReplaceRegex).ReplaceAll(versionFileContent, []byte(fmt.Sprintf(versionReplaceSprintf, majorVersion, minorVersion, patchVersion)))
+
+		if err := os.WriteFile(versionFile, versionFileContent, 0644); err != nil {
+			return log.Error("failed to write version file:", err)
+		}
 	}
 
 	return nil

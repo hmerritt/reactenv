@@ -1,6 +1,6 @@
 {
     "name": "@reactenv/cli",
-    "version": "0.1.47",
+    "version": "0.1.53",
     "description": "reactenv, an experimental solution to inject env variables after a build.",
     "license": "MIT",
     "bin": {
