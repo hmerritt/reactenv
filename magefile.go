@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
 	"regexp"
@@ -70,7 +71,20 @@ func (Build) Clean() error {
 	log := NewLogger()
 	defer log.End()
 	log.Info("cleaning bin directory")
-	return os.RemoveAll("bin")
+
+	if err := os.RemoveAll("bin"); err != nil {
+		return log.Error(err)
+	}
+
+	return fs.WalkDir(os.DirFS("npm"), ".", func(filePath string, d fs.DirEntry, err error) error {
+		if d.IsDir() ||
+			filePath == "reactenv/bin/reactenv" ||
+			!strings.HasPrefix(filePath, "reactenv") ||
+			!strings.HasPrefix(d.Name(), "reactenv") {
+			return nil
+		}
+		return os.Remove(path.Join("npm", filePath))
+	})
 }
 
 func (Build) Debug() error {
