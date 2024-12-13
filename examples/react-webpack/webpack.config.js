@@ -3,7 +3,7 @@ const path = require("path");
 const dotenv = require("dotenv").config({ path: __dirname + "/.env" });
 
 const ReactenvWebpackPlugin = require("@reactenv/webpack");
-// const ReactenvWebpackPlugin = require("../../packages/plugin-webpack/lib");
+// const ReactenvWebpackPlugin = require("../../npm/plugin-webpack/lib");
 
 module.exports = {
 	entry: "./src/index.js",

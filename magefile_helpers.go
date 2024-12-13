@@ -4,6 +4,7 @@
 package main
 
 import (
+	"archive/zip"
 	"bufio"
 	"errors"
 	"fmt"
@@ -222,6 +223,63 @@ func DurationSince(since time.Time) string {
 }
 
 // ----------------------------------------------------------------------------
+// FLAGS + GIT
+// ----------------------------------------------------------------------------
+
+func BuildLdFlagValue(packageName, name, value string) string {
+	return fmt.Sprintf("-X %s/%s.%s=%s", MODULE_NAME, packageName, name, value)
+}
+
+func LdFlagString() string {
+	return fmt.Sprintf(
+		"-s -w %s %s %s",
+		BuildLdFlagValue("version", "GitCommit", GitHash()),
+		BuildLdFlagValue("version", "GitBranch", GitBranch()),
+		BuildLdFlagValue("version", "BuildDate", time.Now().Format("2006-01-02+15:04:05")),
+	)
+}
+
+// Returns the short hash of the current Git commit.
+func GitHash() string {
+	gitHash, _ := sh.Output("git", "rev-parse", "--short", "HEAD")
+	return gitHash
+}
+
+// Returns the current Git branch name.
+//
+// Patches inconsistencies with common CI environments.
+func GitBranch() string {
+	gitBranch, _ := sh.Output("git", "rev-parse", "--abbrev-ref", "HEAD")
+
+	// Detect CircleCI
+	if len(os.Getenv("CIRCLE_BRANCH")) > 0 {
+		gitBranch = os.Getenv("CIRCLE_BRANCH")
+	}
+
+	// Detect GitHub Actions CI
+	if len(os.Getenv("GITHUB_REF_NAME")) > 0 && os.Getenv("GITHUB_REF_TYPE") == "branch" {
+		gitBranch = os.Getenv("GITHUB_REF_NAME")
+	}
+
+	// Detect GitLab CI
+	if len(os.Getenv("CI_COMMIT_BRANCH")) > 0 {
+		gitBranch = os.Getenv("CI_COMMIT_BRANCH")
+	}
+
+	// Detect Netlify CI + generic
+	if len(os.Getenv("BRANCH")) > 0 {
+		gitBranch = os.Getenv("BRANCH")
+	}
+
+	// Detect HEAD state, and remove it.
+	if gitBranch == "HEAD" {
+		gitBranch = ""
+	}
+
+	return gitBranch
+}
+
+// ----------------------------------------------------------------------------
 // MISC
 // ----------------------------------------------------------------------------
 
@@ -237,4 +295,49 @@ func GetEnv(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+// Zip one or more files
+func ZipFiles(zipPath string, files ...string) error {
+	zipFile, err := os.Create(zipPath)
+	if err != nil {
+		return err
+	}
+	defer zipFile.Close()
+
+	zipWriter := zip.NewWriter(zipFile)
+	defer zipWriter.Close()
+
+	// Add the files to the ZIP archive
+	for _, file := range files {
+		fileToZip, err := os.Open(file)
+		if err != nil {
+			return err
+		}
+		defer fileToZip.Close()
+
+		info, err := fileToZip.Stat()
+		if err != nil {
+			return err
+		}
+
+		header, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return err
+		}
+
+		header.Method = zip.Deflate
+
+		writer, err := zipWriter.CreateHeader(header)
+		if err != nil {
+			return err
+		}
+
+		_, err = io.Copy(writer, fileToZip)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

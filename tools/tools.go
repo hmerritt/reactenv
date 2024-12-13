@@ -8,7 +8,11 @@
 package tools
 
 //go:generate go install github.com/magefile/mage
+//go:generate go install github.com/mitchellh/gox
+//go:generate go install gotest.tools/gotestsum
 
 import (
 	_ "github.com/magefile/mage"
+	_ "github.com/mitchellh/gox"
+	_ "gotest.tools/gotestsum"
 )

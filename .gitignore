@@ -12,9 +12,9 @@ node_modules/
 *.tar
 *.tar.gz
 
-!packages/reactenv/bin/reactenv
-packages/reactenv-darwin-arm64/reactenv
-packages/reactenv-darwin-x64/reactenv
-packages/reactenv-linux-arm64/reactenv
-packages/reactenv-linux-x64/reactenv
-packages/reactenv-win32-x64/reactenv
+!npm/reactenv/bin/reactenv
+npm/reactenv-darwin-arm64/reactenv
+npm/reactenv-darwin-x64/reactenv
+npm/reactenv-linux-arm64/reactenv
+npm/reactenv-linux-x64/reactenv
+npm/reactenv-win32-x64/reactenv

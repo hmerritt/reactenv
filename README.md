@@ -15,7 +15,7 @@ Useful for creating generic Docker images. Build your app once and add build fil
 -   Injection is strict by default, and will error if any values are missing
 -   Blazing fast environment variable injection (~0.5ms for a basic react app)
 -   (Optional) Bundler plugins to automate processing `process.env` values during build
-    -   [Webpack plugin `@reactenv/webpack`](https://github.com/hmerritt/reactenv/tree/master/packages/plugin-webpack)
+    -   [Webpack plugin `@reactenv/webpack`](https://github.com/hmerritt/reactenv/tree/master/npm/plugin-webpack)
 
 ### Jump to:
 
@@ -24,6 +24,7 @@ Useful for creating generic Docker images. Build your app once and add build fil
 -   [Example](#example)
 -   [Reasoning](#reasoning)
 -   [Aims](#aims)
+-   [Developing](#developing)
 -   [Licence](#licence)
 
 ## Install
@@ -53,7 +54,7 @@ The magic happens at build-time. You have two options:
 1. Manually set the value of every env variable to `__reactenv.<name>` at build (this option offers the most control, and is potentially more robust)
 
 2. Use one of the bundler plugins to do it for you
-    - [Webpack plugin `@reactenv/webpack`](https://github.com/hmerritt/reactenv/tree/master/packages/plugin-webpack)
+    - [Webpack plugin `@reactenv/webpack`](https://github.com/hmerritt/reactenv/tree/master/npm/plugin-webpack)
     - (more coming soon)
 
 ### Injection via `reactenv`
@@ -179,6 +180,28 @@ Since this is being ran **after** a build, this program needs to be 100% reliabl
 -   Reliable
 -   Easy to **debug**
 -   Simple to use
+
+## Developing
+
+```sh
+# setup
+mage -v bootstrap
+```
+
+```sh
+# build single debug binary (current platform)
+mage -v build:debug
+```
+
+```sh
+# build all release binaries (cross platform)
+mage -v build:release
+```
+
+```sh
+# bundles all binaries into zips, ready for release/distribution
+mage -v release
+```
 
 ## Licence
 
