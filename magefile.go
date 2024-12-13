@@ -155,13 +155,14 @@ func Release() error {
 
 	// Zip
 	for archIndex, arch := range releaseArchs {
+		log.Info(fmt.Sprintf("%13s", arch))
 		archLog := fmt.Sprintf("%13s |", arch)
 		binDirPath := fmt.Sprintf("bin/%s", arch)
 		binFilePath := ""
 
 		// Search each binary path for the release binary,
 		// ensure binary file exists and check it's file size.
-		log.Info(archLog, "checking release binary")
+		log.Debug(archLog, "checking release binary")
 		binPathfiles, err := os.ReadDir(binDirPath)
 		if err != nil {
 			return log.Error(archLog, "error reading directory:", err)
@@ -186,7 +187,7 @@ func Release() error {
 			return log.Error(archLog, "failed to find release binary", arch)
 		}
 
-		log.Info(archLog, "zip for release")
+		log.Debug(archLog, "zip for release")
 		zipFileName := fmt.Sprintf("reactenv_%s_%s.zip", releaseVersion, arch)
 		zipFilePath := fmt.Sprintf("bin/%s", zipFileName)
 
@@ -197,7 +198,7 @@ func Release() error {
 
 		// Copy binary into npm directory
 		if releaseArchsNpmDirectories[archIndex] != "" {
-			log.Info(archLog, "copy binary into npm directory")
+			log.Debug(archLog, "copy binary into npm directory")
 			CopyFile(binFilePath, path.Join("npm", releaseArchsNpmDirectories[archIndex], path.Base(binFilePath)))
 		}
 	}
@@ -286,7 +287,7 @@ func BumpVersion() error {
 		"npm/reactenv-win32-x64/package.json",
 	}
 
-	for _, versionFile := range filesWithVersion {
+	for index, versionFile := range filesWithVersion {
 		versionFileContent, err := os.ReadFile(versionFile)
 
 		if err != nil {
@@ -320,7 +321,10 @@ func BumpVersion() error {
 
 		versionCurrent := fmt.Sprintf("%s.%s.%s", majorVersion, minorVersion, patchVersionCurrent)
 		versionNew := fmt.Sprintf("%s.%s.%d", majorVersion, minorVersion, patchVersion)
-		log.Info("bumping version", versionCurrent, "->", versionNew)
+
+		if index == 0 {
+			log.Info("bumping version", versionCurrent, "->", versionNew)
+		}
 
 		// Update version file
 		versionFileContent = regexp.MustCompile(versionReplaceRegex).ReplaceAll(versionFileContent, []byte(fmt.Sprintf(versionReplaceSprintf, majorVersion, minorVersion, patchVersion)))
