@@ -66,6 +66,13 @@ func Bench() error {
 // Build
 // ----------------------------------------------------------------------------
 
+func (Build) Clean() error {
+	log := NewLogger()
+	defer log.End()
+	log.Info("cleaning bin directory")
+	return os.RemoveAll("bin")
+}
+
 func (Build) Debug() error {
 	log := NewLogger()
 	defer log.End()
@@ -76,6 +83,8 @@ func (Build) Debug() error {
 }
 
 func (Build) Release() error {
+	mg.Deps(Build.Clean)
+
 	log := NewLogger()
 	defer log.End()
 	log.Info("compiling release binary")
