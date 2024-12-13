@@ -9,7 +9,7 @@ var (
 	// The compilation date. This will be filled in by the compiler.
 	BuildDate string
 
-	Version           = "0.1.53"
+	Version           = "0.1.59"
 	VersionPrerelease = ""
 	VersionMetadata   = ""
 )

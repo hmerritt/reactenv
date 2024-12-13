@@ -97,7 +97,7 @@ func (Build) Debug() error {
 }
 
 func (Build) Release() error {
-	mg.Deps(Build.Clean)
+	mg.Deps(Build.Clean, BumpVersion)
 
 	log := NewLogger()
 	defer log.End()

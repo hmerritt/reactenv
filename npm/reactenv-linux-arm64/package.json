@@ -1,6 +1,6 @@
 {
     "name": "@reactenv/cli-linux-arm64",
-    "version": "0.1.53",
+    "version": "0.1.59",
     "description": "The Linux ARM 64-bit binary for reactenv, an experimental solution to inject env variables after a build.",
     "license": "MIT",
     "os": [
