@@ -141,16 +141,30 @@ func Release() error {
 		"openbsd_amd64",
 		"windows_amd64"}
 
-	for _, arch := range releaseArchs {
+	releaseArchsNpmDirectories := []string{
+		"reactenv-darwin-x64",
+		"reactenv-darwin-arm64",
+		"",
+		"",
+		"reactenv-linux-x64",
+		"reactenv-linux-arm64",
+		"",
+		"",
+		"",
+		"reactenv-win32-x64"}
+
+	// Zip
+	for archIndex, arch := range releaseArchs {
+		archLog := fmt.Sprintf("%13s |", arch)
 		binDirPath := fmt.Sprintf("bin/%s", arch)
 		binFilePath := ""
 
 		// Search each binary path for the release binary,
 		// ensure binary file exists and check it's file size.
-		log.Info("checking release binary for:", arch)
+		log.Info(archLog, "checking release binary")
 		binPathfiles, err := os.ReadDir(binDirPath)
 		if err != nil {
-			return log.Error("error reading directory:", arch, err)
+			return log.Error(archLog, "error reading directory:", err)
 		}
 		for _, file := range binPathfiles {
 			if file.IsDir() {
@@ -159,26 +173,32 @@ func Release() error {
 			if strings.Contains(file.Name(), "reactenv") {
 				fileInfo, err := file.Info()
 				if err != nil {
-					return log.Error("error getting file info:", arch, err)
+					return log.Error(archLog, "error getting file info:", err)
 				}
 				if fileInfo.Size() < 1000000 {
-					return log.Error("release binary is too small:", arch, err)
+					return log.Error(archLog, "release binary is too small:", err)
 				}
 				binFilePath = fmt.Sprintf("%s/%s", binDirPath, file.Name())
 				break
 			}
 		}
 		if binFilePath == "" {
-			return log.Error("failed to find release binary", arch)
+			return log.Error(archLog, "failed to find release binary", arch)
 		}
 
-		log.Info("zip for release")
+		log.Info(archLog, "zip for release")
 		zipFileName := fmt.Sprintf("reactenv_%s_%s.zip", releaseVersion, arch)
 		zipFilePath := fmt.Sprintf("bin/%s", zipFileName)
 
 		err = ZipFiles(zipFilePath, binFilePath)
 		if err != nil {
-			return log.Error("failed to zip binary", err)
+			return log.Error(archLog, "failed to zip binary", err)
+		}
+
+		// Copy binary into npm directory
+		if releaseArchsNpmDirectories[archIndex] != "" {
+			log.Info(archLog, "copy binary into npm directory")
+			CopyFile(binFilePath, path.Join("npm", releaseArchsNpmDirectories[archIndex], path.Base(binFilePath)))
 		}
 	}
 

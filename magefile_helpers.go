@@ -297,6 +297,20 @@ func GetEnv(key, fallback string) string {
 	return fallback
 }
 
+func CopyFile(src, dst string) error {
+	input, err := os.ReadFile(src)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(dst, input, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Zip one or more files
 func ZipFiles(zipPath string, files ...string) error {
 	zipFile, err := os.Create(zipPath)
