@@ -24,7 +24,6 @@ Useful for creating generic Docker images. Build your app once and add build fil
 -   [Example](#example)
 -   [Reasoning](#reasoning)
 -   [Aims](#aims)
--   [Developing](#developing)
 -   [Licence](#licence)
 
 ## Install
