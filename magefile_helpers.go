@@ -171,7 +171,7 @@ func (l *Logger) log(level uint32, a ...interface{}) {
 
 	currentTime := time.Now()
 	formattedTime := currentTime.Format("2006-01-02 15:04:05")
-	toLog := fmt.Sprintf("%s (%s) +%7s => ", formattedTime, l.FnInitName, DurationSince(l.PrevTimestamp))
+	toLog := fmt.Sprintf("%s (%s) +%10s => ", formattedTime, l.FnInitName, DurationSince(l.PrevTimestamp))
 
 	messages := make([]interface{}, 0)
 	messages = append(messages, toLog)
