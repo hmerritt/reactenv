@@ -20,24 +20,27 @@ func (c *RunCommand) Synopsis() string {
 }
 
 func (c *RunCommand) Help() string {
-	helpText := `
-Usage: reactenv run [options] FILE
+	jsInfo := c.UI.Colorize(".js", c.UI.InfoColor)
+	helpText := fmt.Sprintf(`
+Usage: reactenv run [options] ASSET_PATH
   
-  Inject environment variables into a built react app.
-`
+Inject environment variables into a built react app.
+
+Example:
+  $ reactenv run ./dist/assets
+
+    dist/assets
+    ├── index.css
+    ├── index-csxw0qbp%s
+    ├── login.lazy-b839zm%s
+    └── user.lazy-c7942lh%s  <- Runs on all %s files in ASSET_PATH
+`, jsInfo, jsInfo, jsInfo, jsInfo)
 
 	return strings.TrimSpace(helpText)
 }
 
 func (c *RunCommand) Flags() *FlagMap {
 	return GetFlagMap(FlagNamesGlobal)
-}
-
-func (c *RunCommand) strictExit() {
-	if c.Flags().Get("strict").Value == true {
-		c.UI.Error("\nAn error occured while using the '--strict' flag.")
-		os.Exit(1)
-	}
 }
 
 func (c *RunCommand) Run(args []string) int {
@@ -47,14 +50,14 @@ func (c *RunCommand) Run(args []string) int {
 
 	if len(args) == 0 {
 		c.UI.Error("No asset path entered.")
-		os.Exit(1)
+		c.exitWithHelp()
 	}
 
 	pathToAssets := args[0]
 
 	if _, err := os.Stat(pathToAssets); os.IsNotExist(err) {
-		c.UI.Error("Asset path does not exist.")
-		os.Exit(1)
+		c.UI.Error(fmt.Sprintf("Asset path '%s' does not exist.", pathToAssets))
+		c.exitWithHelp()
 	}
 
 	// Find all .js files
@@ -62,7 +65,8 @@ func (c *RunCommand) Run(args []string) int {
 	javascriptFiles := make([]fs.DirEntry, 0, len(files))
 
 	if err != nil {
-		c.UI.Error("Failed to read asset directory files.")
+		c.UI.Error(fmt.Sprintf("Error when reading asset directory files.\n"))
+		c.UI.Error(fmt.Sprintf("%v", err))
 		os.Exit(1)
 	}
 
@@ -74,7 +78,7 @@ func (c *RunCommand) Run(args []string) int {
 	}
 
 	if len(javascriptFiles) == 0 {
-		c.UI.Error("No JavaScript (.js) files found.")
+		c.UI.Error("No JavaScript (.js) files found in asset directory.")
 		os.Exit(1)
 	}
 
@@ -86,7 +90,8 @@ func (c *RunCommand) Run(args []string) int {
 		fileContentsNew := make([]byte, 0, len(fileContents))
 
 		if err != nil {
-			c.UI.Error(fmt.Sprintf(`Error when reading "%s": %v`, file.Name(), err))
+			c.UI.Error(fmt.Sprintf("Error when reading file '%s'.\n", file.Name()))
+			c.UI.Error(fmt.Sprintf("%v", err))
 			os.Exit(1)
 		}
 
@@ -127,11 +132,17 @@ func (c *RunCommand) Run(args []string) int {
 
 		// Write .js file
 		if err := os.WriteFile(filePath, fileContentsNew, 0644); err != nil {
-			c.UI.Error(fmt.Sprintf(`Error when writing to file "%s": %v`, filePath, err))
+			c.UI.Error(fmt.Sprintf("Error when writing to file '%s'.\n", filePath))
+			c.UI.Error(fmt.Sprintf("%v", err))
 			os.Exit(1)
 		}
 	}
 
 	duration.In(c.UI.SuccessColor, "Injected environment variables")
 	return 0
+}
+
+func (c *RunCommand) exitWithHelp() {
+	c.UI.Output("\nSee 'reactenv run --help'.")
+	os.Exit(1)
 }

@@ -8,11 +8,9 @@ import (
 // Maximum width of any line, in character count.
 const MaxLineLength = 75
 
+// Imported from: https://github.com/mitchellh/go-wordwrap/blob/v1.0.1/wordwrap.go
 //
-// Imported directly from, https://github.com/mitchellh/go-wordwrap/blob/v1.0.1/wordwrap.go
-//
-// Modified subtly to fit the needs of fspop
-//
+// Modified to add custom indent on-wrap
 
 const nbsp = 0xA0
 
