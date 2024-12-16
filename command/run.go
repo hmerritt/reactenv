@@ -87,7 +87,7 @@ func (c *RunCommand) Run(args []string) int {
 	renv.FindOccurrences()
 
 	if renv.OccurrencesTotal == 0 {
-		c.UI.Warn(ui.WrapAtLength(fmt.Sprintf("No reactenv environment variables were found in any of the %d '%s' files within '%s', therefore nothing was injected.\n", len(renv.Files), fileMatchExpression, pathToAssets), 0))
+		c.UI.Warn(ui.WrapAtLength(fmt.Sprintf("No reactenv environment variables were found in any of the %d '%s' files within '%s', therefore nothing was injected.\n", renv.FilesMatchTotal, fileMatchExpression, pathToAssets), 0))
 		c.UI.Warn(ui.WrapAtLength("Possible causes:", 4))
 		c.UI.Warn(ui.WrapAtLength("  - reactenv has already ran on these files", 4))
 		c.UI.Warn(ui.WrapAtLength("  - Environment variables were not replaced with `__reactenv.<name>` during build", 4))
