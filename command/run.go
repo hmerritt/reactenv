@@ -86,7 +86,7 @@ func (c *RunCommand) Run(args []string) int {
 
 	renv.FindOccurrences()
 
-	if len(renv.Occurrences) == 0 {
+	if renv.OccurrencesTotal == 0 {
 		c.UI.Warn(ui.WrapAtLength(fmt.Sprintf("No reactenv environment variables were found in any of the %d '%s' files within '%s', therefore nothing was injected.\n", len(renv.Files), fileMatchExpression, pathToAssets), 0))
 		c.UI.Warn(ui.WrapAtLength("Possible causes:", 4))
 		c.UI.Warn(ui.WrapAtLength("  - reactenv has already ran on these files", 4))
@@ -99,8 +99,8 @@ func (c *RunCommand) Run(args []string) int {
 	c.UI.Output(
 		fmt.Sprintf(
 			"Found %d reactenv environment %s in %d/%d matching files:",
-			len(renv.Occurrences),
-			ui.Pluralize("variable", len(renv.Occurrences)),
+			renv.OccurrencesTotal,
+			ui.Pluralize("variable", renv.OccurrencesTotal),
 			len(renv.Files),
 			renv.FilesMatchTotal,
 		),
@@ -116,7 +116,7 @@ func (c *RunCommand) Run(args []string) int {
 	}
 	c.UI.Output("")
 
-	c.UI.Output(fmt.Sprintf("Environment %s checklist (ticked if value has been set):", ui.Pluralize("variable", len(renv.Occurrences))))
+	c.UI.Output(fmt.Sprintf("Environment %s checklist (ticked if value has been set):", ui.Pluralize("variable", renv.OccurrencesTotal)))
 	envValuesMissing := 0
 	for occurrenceKey := range renv.OccurrenceKeys {
 		check := "✅"

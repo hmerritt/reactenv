@@ -28,7 +28,7 @@ type Reactenv struct {
 	Files []*fs.DirEntry
 
 	// Total individual occurrences count
-	Occurrences []Occurrence
+	OccurrencesTotal int
 	// Each file occurrence count + keys
 	OccurrencesByFile []*FileOccurrences
 	// Map of all unique environment variable keys
@@ -38,14 +38,13 @@ type Reactenv struct {
 }
 
 type Occurrence = struct {
-	FilePath string
+	Key      string
 	StartEnd []int
 }
 type OccurrenceKeys = map[string]bool
 type OccurrenceKeysReplacement = map[string]string
 type FileOccurrences = struct {
-	Occurrences    []Occurrence
-	OccurrenceKeys OccurrenceKeys
+	Occurrences []Occurrence
 }
 
 func NewReactenv(ui *ui.Ui) *Reactenv {
@@ -53,7 +52,7 @@ func NewReactenv(ui *ui.Ui) *Reactenv {
 		UI:                        ui,
 		Dir:                       "",
 		Files:                     make([]*fs.DirEntry, 0),
-		Occurrences:               make([]Occurrence, 0),
+		OccurrencesTotal:          0,
 		OccurrencesByFile:         make([]*FileOccurrences, 0),
 		OccurrenceKeys:            make(OccurrenceKeys),
 		OccurrenceKeysReplacement: make(OccurrenceKeysReplacement),
@@ -124,48 +123,44 @@ func (r *Reactenv) FilesWalkContents(fileCb func(fileIndex int, file fs.DirEntry
 // Walks every file and populates `Reactenv.Occurrences*` fields.
 func (r *Reactenv) FindOccurrences() {
 	// Reset occurrence fields
-	r.Occurrences = make([]Occurrence, 0)
-	r.OccurrencesByFile = make([]*FileOccurrences, 0, len(r.Files))
+	r.OccurrencesTotal = 0
+	r.OccurrencesByFile = make([]*FileOccurrences, 0)
 	r.OccurrenceKeys = make(OccurrenceKeys)
 	r.OccurrenceKeysReplacement = make(OccurrenceKeysReplacement)
 
 	// Prep for removing files with no occurrences
 	newFiles := make([]*fs.DirEntry, 0, len(r.Files))
-	newOccurrencesTotalByFile := make([]*FileOccurrences, 0, len(r.Files))
+	newOccurrencesByFile := make([]*FileOccurrences, 0)
 	fileIndexesToRemove := make(map[int]int, 0)
 
 	r.FilesWalkContents(func(fileIndex int, file fs.DirEntry, filePath string, fileContents []byte) error {
 		fileOccurrences := regexp.MustCompile(REACTENV_FIND_EXPRESSION).FindAllIndex(fileContents, -1)
 
 		fileOccurrencesToStore := make([]Occurrence, 0, len(fileOccurrences))
-		for _, occurrence := range fileOccurrences {
-			fileOccurrencesToStore = append(fileOccurrencesToStore, Occurrence{
-				FilePath: filePath,
-				StartEnd: occurrence,
-			})
-		}
-
-		r.Occurrences = append(r.Occurrences, fileOccurrencesToStore...)
+		r.OccurrencesTotal += len(fileOccurrences)
 		r.OccurrencesByFile = append(r.OccurrencesByFile, &FileOccurrences{
-			Occurrences:    fileOccurrencesToStore,
-			OccurrenceKeys: make(OccurrenceKeys),
+			Occurrences: fileOccurrencesToStore,
 		})
-
-		if len(fileOccurrences) == 0 {
-			fileIndexesToRemove[fileIndex] = fileIndex
-		}
 
 		for _, occurrence := range fileOccurrences {
 			occurrenceText := string(fileContents[occurrence[0]:occurrence[1]])
 			envName := strings.Replace(occurrenceText, "__reactenv.", "", 1)
 			envValue, envExists := os.LookupEnv(envName)
 
+			r.OccurrencesByFile[fileIndex].Occurrences = append(r.OccurrencesByFile[fileIndex].Occurrences, Occurrence{
+				Key:      envName,
+				StartEnd: occurrence,
+			})
+
+			r.OccurrenceKeys[envName] = true
+
 			if envExists {
 				r.OccurrenceKeysReplacement[envName] = envValue
 			}
+		}
 
-			r.OccurrenceKeys[envName] = true
-			r.OccurrencesByFile[fileIndex].OccurrenceKeys[envName] = true
+		if len(fileOccurrences) == 0 {
+			fileIndexesToRemove[fileIndex] = fileIndex
 		}
 
 		return nil
@@ -176,26 +171,23 @@ func (r *Reactenv) FindOccurrences() {
 		for fileIndex, file := range r.Files {
 			if _, ok := fileIndexesToRemove[fileIndex]; !ok {
 				newFiles = append(newFiles, file)
-				newOccurrencesTotalByFile = append(newOccurrencesTotalByFile, r.OccurrencesByFile[fileIndex])
+				newOccurrencesByFile = append(newOccurrencesByFile, r.OccurrencesByFile[fileIndex])
 			}
 		}
 
 		r.Files = newFiles
-		r.OccurrencesByFile = newOccurrencesTotalByFile
+		r.OccurrencesByFile = newOccurrencesByFile
 	}
 }
 
 func (r *Reactenv) ReplaceOccurrences() {
 	r.FilesWalkContents(func(fileIndex int, file fs.DirEntry, filePath string, fileContents []byte) error {
 		fileContentsNew := make([]byte, 0, len(fileContents))
-		fileOccurrences := r.OccurrencesByFile[fileIndex].Occurrences
 
 		lastIndex := 0
-		for _, occurrence := range fileOccurrences {
+		for _, occurrence := range r.OccurrencesByFile[fileIndex].Occurrences {
 			start, end := occurrence.StartEnd[0], occurrence.StartEnd[1]
-			occurrenceText := string(fileContents[start:end])
-			envName := strings.Replace(occurrenceText, "__reactenv.", "", 1)
-			envValue := r.OccurrenceKeysReplacement[envName]
+			envValue := r.OccurrenceKeysReplacement[occurrence.Key]
 
 			fileContentsNew = append(fileContentsNew, fileContents[lastIndex:start]...)
 			fileContentsNew = append(fileContentsNew, envValue...)

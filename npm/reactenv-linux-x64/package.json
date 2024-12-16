@@ -1,6 +1,6 @@
 {
     "name": "@reactenv/cli-linux-x64",
-    "version": "0.1.70",
+    "version": "0.1.71",
     "description": "The Linux 64-bit binary for reactenv, an experimental solution to inject env variables after a build.",
     "license": "Apache-2.0",
     "os": [
