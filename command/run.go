@@ -82,6 +82,14 @@ func (c *RunCommand) Run(args []string) int {
 		os.Exit(1)
 	}
 
+	allOccurrences := 0
+
+	// @TODO:
+	// - Loop all JS files, find all occurrences
+	// - Log: Total occurrences, Each file occurrences, All found occurrences + the ENV value to be injected
+	// - Re-loop all JS files, replace all occurrences
+	// - Log errors, warnings and successes
+
 	// Inject environment variables into .js files
 	for _, file := range javascriptFiles {
 		// Read .js file
@@ -102,6 +110,8 @@ func (c *RunCommand) Run(args []string) int {
 		if len(occurrences) == 0 {
 			continue
 		}
+
+		allOccurrences += len(occurrences)
 
 		// For each occurrence, find the corresponding environment variable,
 		// exits if any environment variable is not set.
@@ -138,7 +148,17 @@ func (c *RunCommand) Run(args []string) int {
 		}
 	}
 
-	duration.In(c.UI.SuccessColor, "Injected environment variables")
+	if allOccurrences == 0 {
+		c.UI.Warn(ui.WrapAtLength(fmt.Sprintf("No reactenv environment variables were found in any of the .js files within '%s', therefore nothing was injected.\n", pathToAssets), 0))
+		c.UI.Warn(ui.WrapAtLength("Possible causes:", 4))
+		c.UI.Warn(ui.WrapAtLength("  - Environment variables were not replaced with `__reactenv.<name>` during build", 4))
+		c.UI.Warn(ui.WrapAtLength("  - 'reactenv' has already ran on these files", 4))
+		c.UI.Warn("")
+		duration.In(c.UI.WarnColor, "")
+		return 1
+	}
+
+	duration.In(c.UI.SuccessColor, fmt.Sprintf("Injected '%d' environment variables", allOccurrences))
 	return 0
 }
 

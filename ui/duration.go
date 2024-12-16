@@ -21,7 +21,11 @@ func InitDuration(ui *Ui) *Duration {
 }
 
 func (d *Duration) In(textColor cli.UiColor, text string) {
-	d.ui.Output(fmt.Sprintf("%s in %s", d.ui.Colorize(text, textColor), time.Since(d.start)))
+	if text == "" {
+		d.ui.Output(fmt.Sprintf("took %s", time.Since(d.start)))
+	} else {
+		d.ui.Output(fmt.Sprintf("%s in %s", d.ui.Colorize(text, textColor), time.Since(d.start)))
+	}
 }
 
 func (d *Duration) Since() time.Duration {

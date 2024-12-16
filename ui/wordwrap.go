@@ -6,7 +6,7 @@ import (
 )
 
 // Maximum width of any line, in character count.
-const MaxLineLength = 75
+const MaxLineLength = 85
 
 // Imported from: https://github.com/mitchellh/go-wordwrap/blob/v1.0.1/wordwrap.go
 //
