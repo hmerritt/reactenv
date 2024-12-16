@@ -2,7 +2,7 @@
     "name": "@reactenv/cli",
     "version": "0.1.64",
     "description": "reactenv, an experimental solution to inject env variables after a build.",
-    "license": "MIT",
+    "license": "Apache-2.0",
     "bin": {
         "reactenv": "bin/reactenv"
     },

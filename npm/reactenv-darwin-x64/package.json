@@ -2,7 +2,7 @@
     "name": "@reactenv/cli-darwin-x64",
     "version": "0.1.64",
     "description": "The macOS 64-bit binary for reactenv, an experimental solution to inject env variables after a build.",
-    "license": "MIT",
+    "license": "Apache-2.0",
     "os": [
         "darwin"
     ],
