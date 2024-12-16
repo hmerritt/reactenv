@@ -106,6 +106,16 @@ func (c *RunCommand) Run(args []string) int {
 			renv.FilesMatchTotal,
 		),
 	)
+	for fileIndex, fileOccurrencesTotal := range renv.OccurrencesTotalByFile {
+		c.UI.Output(
+			fmt.Sprintf(
+				"  - %4dx in %s",
+				fileOccurrencesTotal.Total,
+				(*renv.Files[fileIndex]).Name(),
+			),
+		)
+	}
+	c.UI.Output("")
 
 	//
 	//

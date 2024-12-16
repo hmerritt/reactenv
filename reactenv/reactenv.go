@@ -30,7 +30,7 @@ type Reactenv struct {
 	// Total individual occurrences count
 	OccurrencesTotal int
 	// Each file occurrence count + keys
-	OccurrencesTotalByFile map[int]*FileOccurrences
+	OccurrencesTotalByFile []*FileOccurrences
 	// Map of all unique environment variable keys
 	OccurrenceKeys OccurrenceKeys
 	// Map of all environment variable key values (keys will be replaced with these values)
@@ -51,7 +51,7 @@ func NewReactenv(ui *ui.Ui) *Reactenv {
 		Files:                  make([]*fs.DirEntry, 0),
 		OccurrenceKeys:         make(OccurrenceKeys),
 		OccurrencesTotal:       0,
-		OccurrencesTotalByFile: make(map[int]*FileOccurrences),
+		OccurrencesTotalByFile: make([]*FileOccurrences, 0),
 	}
 }
 
@@ -120,21 +120,23 @@ func (r *Reactenv) FilesWalkContents(fileCb func(fileIndex int, file fs.DirEntry
 func (r *Reactenv) FindOccurrences() {
 	r.OccurrenceKeys = make(OccurrenceKeys)
 	r.OccurrencesTotal = 0
-	r.OccurrencesTotalByFile = make(map[int]*FileOccurrences)
+	r.OccurrencesTotalByFile = make([]*FileOccurrences, 0, len(r.Files))
 
-	fileIndexesToRemove := make([]int, 0)
+	newFiles := make([]*fs.DirEntry, 0, len(r.Files))
+	newOccurrencesTotalByFile := make([]*FileOccurrences, 0, len(r.Files))
+	fileIndexesToRemove := make(map[int]int, 0)
 
 	r.FilesWalkContents(func(fileIndex int, file fs.DirEntry, filePath string, fileContents []byte) error {
 		fileOccurrences := regexp.MustCompile(REACTENV_FIND_EXPRESSION).FindAllIndex(fileContents, -1)
 
 		r.OccurrencesTotal += len(fileOccurrences)
-		r.OccurrencesTotalByFile[fileIndex] = &FileOccurrences{
+		r.OccurrencesTotalByFile = append(r.OccurrencesTotalByFile, &FileOccurrences{
 			Total:          len(fileOccurrences),
 			OccurrenceKeys: make(OccurrenceKeys),
-		}
+		})
 
 		if len(fileOccurrences) == 0 {
-			fileIndexesToRemove = append(fileIndexesToRemove, fileIndex)
+			fileIndexesToRemove[fileIndex] = fileIndex
 		}
 
 		for _, occurrence := range fileOccurrences {
@@ -154,8 +156,16 @@ func (r *Reactenv) FindOccurrences() {
 	})
 
 	// Remove files with no occurrences
-	for _, fileIndex := range fileIndexesToRemove {
-		r.Files = append(r.Files[:fileIndex], r.Files[fileIndex+1:]...)
+	if len(fileIndexesToRemove) > 0 {
+		for fileIndex, file := range r.Files {
+			if _, ok := fileIndexesToRemove[fileIndex]; !ok {
+				newFiles = append(newFiles, file)
+				newOccurrencesTotalByFile = append(newOccurrencesTotalByFile, r.OccurrencesTotalByFile[fileIndex])
+			}
+		}
+
+		r.Files = newFiles
+		r.OccurrencesTotalByFile = newOccurrencesTotalByFile
 	}
 }
 
