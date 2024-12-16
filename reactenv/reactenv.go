@@ -24,7 +24,7 @@ type Reactenv struct {
 
 	// Total file count (that match `REACTENV_FIND_EXPRESSION`, within `Dir`)
 	FilesMatchTotal int
-	// Files with occurrences (that match `REACTENV_FIND_EXPRESSION`, within `Dir`)
+	// Files with occurrences (not every matched file will have an occurrence, so this may be less than `FilesMatchTotal`)
 	Files []*fs.DirEntry
 
 	// Total individual occurrences count
@@ -46,12 +46,13 @@ type FileOccurrences = struct {
 
 func NewReactenv(ui *ui.Ui) *Reactenv {
 	return &Reactenv{
-		UI:                     ui,
-		Dir:                    "",
-		Files:                  make([]*fs.DirEntry, 0),
-		OccurrenceKeys:         make(OccurrenceKeys),
-		OccurrencesTotal:       0,
-		OccurrencesTotalByFile: make([]*FileOccurrences, 0),
+		UI:                        ui,
+		Dir:                       "",
+		Files:                     make([]*fs.DirEntry, 0),
+		OccurrenceKeys:            make(OccurrenceKeys),
+		OccurrenceKeysReplacement: make(OccurrenceKeysReplacement),
+		OccurrencesTotal:          0,
+		OccurrencesTotalByFile:    make([]*FileOccurrences, 0),
 	}
 }
 
@@ -118,10 +119,13 @@ func (r *Reactenv) FilesWalkContents(fileCb func(fileIndex int, file fs.DirEntry
 
 // Walks every file and populates `Reactenv.Occurrences*` fields.
 func (r *Reactenv) FindOccurrences() {
+	// Reset occurrence fields
 	r.OccurrenceKeys = make(OccurrenceKeys)
+	r.OccurrenceKeysReplacement = make(OccurrenceKeysReplacement)
 	r.OccurrencesTotal = 0
 	r.OccurrencesTotalByFile = make([]*FileOccurrences, 0, len(r.Files))
 
+	// Prep for removing files with no occurrences
 	newFiles := make([]*fs.DirEntry, 0, len(r.Files))
 	newOccurrencesTotalByFile := make([]*FileOccurrences, 0, len(r.Files))
 	fileIndexesToRemove := make(map[int]int, 0)
@@ -173,5 +177,5 @@ func (r *Reactenv) FindOccurrences() {
 // 	r.FilesWalkContents(func(fileIndex int, file fs.DirEntry, filePath string, fileContents []byte) error {
 // 		fileOccurrences := regexp.MustCompile(REACTENV_FIND_EXPRESSION).FindAllIndex(fileContents, -1)
 // 		occurrenceReplacementValues := make([]string, len(occurrences))
-// 	}
+// 	})
 // }

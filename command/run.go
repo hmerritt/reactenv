@@ -99,7 +99,7 @@ func (c *RunCommand) Run(args []string) int {
 
 	c.UI.Output(
 		fmt.Sprintf(
-			"Found %d environment %s in %d/%d matching files:",
+			"Found %d reactenv environment %s in %d/%d matching files:",
 			renv.OccurrencesTotal,
 			ui.Pluralize("variable", renv.OccurrencesTotal),
 			len(renv.Files),
@@ -116,6 +116,23 @@ func (c *RunCommand) Run(args []string) int {
 		)
 	}
 	c.UI.Output("")
+
+	c.UI.Output(fmt.Sprintf("Environment %s checklist (ticked if value has been set):", ui.Pluralize("variable", renv.OccurrencesTotal)))
+	envValuesMissing := 0
+	for occurrenceKey := range renv.OccurrenceKeys {
+		check := "✅"
+		if _, ok := renv.OccurrenceKeysReplacement[occurrenceKey]; !ok {
+			check = "❌"
+			envValuesMissing++
+		}
+		c.UI.Output(fmt.Sprintf("  - %4s %s", check, occurrenceKey))
+	}
+	c.UI.Output("")
+
+	if envValuesMissing > 0 {
+		c.UI.Error(fmt.Sprintf("Environment %s not set. See above checklist for missing values.", ui.Pluralize("variable", envValuesMissing)))
+		os.Exit(1)
+	}
 
 	//
 	//
