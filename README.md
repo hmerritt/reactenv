@@ -13,7 +13,7 @@ Useful for creating generic Docker images. Build your app once and add build fil
 -   No runtime overhead
 -   No app code changes required
 -   Injection is strict by default, and will error if any values are missing
--   Blazing fast environment variable injection (~0.5ms for a basic react app)
+-   Blazing fast environment variable injection (~1ms for a basic react app)
 -   (Optional) Bundler plugins to automate processing `process.env` values during build
     -   [Webpack plugin `@reactenv/webpack`](https://github.com/hmerritt/reactenv/tree/master/npm/plugin-webpack)
 
