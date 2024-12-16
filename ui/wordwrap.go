@@ -127,3 +127,11 @@ func IndentString(s string, indentSpaces int) string {
 
 	return buf.String()
 }
+
+// Pluralizes a singular word based on a count
+func Pluralize(str string, count int) string {
+	if count == 1 {
+		return str
+	}
+	return str + "s"
+}

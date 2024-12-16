@@ -2,12 +2,12 @@ package command
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
 	"path"
 	"regexp"
 	"strings"
 
+	"github.com/hmerritt/reactenv/reactenv"
 	"github.com/hmerritt/reactenv/ui"
 )
 
@@ -22,7 +22,7 @@ func (c *RunCommand) Synopsis() string {
 func (c *RunCommand) Help() string {
 	jsInfo := c.UI.Colorize(".js", c.UI.InfoColor)
 	helpText := fmt.Sprintf(`
-Usage: reactenv run [options] ASSET_PATH
+Usage: reactenv run [options] PATH
   
 Inject environment variables into a built react app.
 
@@ -33,7 +33,7 @@ Example:
     ├── index.css
     ├── index-csxw0qbp%s
     ├── login.lazy-b839zm%s
-    └── user.lazy-c7942lh%s  <- Runs on all %s files in ASSET_PATH
+    └── user.lazy-c7942lh%s  <- Runs on all %s files in PATH
 `, jsInfo, jsInfo, jsInfo, jsInfo)
 
 	return strings.TrimSpace(helpText)
@@ -49,38 +49,67 @@ func (c *RunCommand) Run(args []string) int {
 	args = c.Flags().Parse(c.UI, args)
 
 	if len(args) == 0 {
-		c.UI.Error("No asset path entered.")
+		c.UI.Error("No asset PATH entered.")
 		c.exitWithHelp()
 	}
 
 	pathToAssets := args[0]
 
 	if _, err := os.Stat(pathToAssets); os.IsNotExist(err) {
-		c.UI.Error(fmt.Sprintf("Asset path '%s' does not exist.", pathToAssets))
+		c.UI.Error(fmt.Sprintf("File PATH '%s' does not exist.", pathToAssets))
 		c.exitWithHelp()
 	}
 
-	// Find all .js files
-	files, err := os.ReadDir(pathToAssets)
-	javascriptFiles := make([]fs.DirEntry, 0, len(files))
+	// @TODO: Add flag to specify matcher
+	fileMatchExpression := `.*\.js`
+	_, err := regexp.Compile(fileMatchExpression)
 
 	if err != nil {
-		c.UI.Error(fmt.Sprintf("Error when reading asset directory files.\n"))
+		c.UI.Error(fmt.Sprintf("File match expression '%s' is not valid.\n", fileMatchExpression))
+		c.UI.Error(fmt.Sprintf("%v", err))
+		c.exitWithHelp()
+	}
+
+	renv := reactenv.NewReactenv(c.UI)
+
+	err = renv.FindFiles(pathToAssets, fileMatchExpression)
+
+	if err != nil {
+		c.UI.Error(fmt.Sprintf("Error reading files in PATH '%s'.\n", pathToAssets))
 		c.UI.Error(fmt.Sprintf("%v", err))
 		os.Exit(1)
 	}
 
-	for _, file := range files {
-		if file.IsDir() || !strings.HasSuffix(file.Name(), ".js") {
-			continue
-		}
-		javascriptFiles = append(javascriptFiles, file)
-	}
-
-	if len(javascriptFiles) == 0 {
-		c.UI.Error("No JavaScript (.js) files found in asset directory.")
+	if len(renv.Files) == 0 {
+		c.UI.Error(fmt.Sprintf("No files found in path '%s' using matcher '%s'", pathToAssets, fileMatchExpression))
 		os.Exit(1)
 	}
+
+	renv.FindOccurrences()
+
+	if renv.OccurrencesTotal == 0 {
+		c.UI.Warn(ui.WrapAtLength(fmt.Sprintf("No reactenv environment variables were found in any of the %d '%s' files within '%s', therefore nothing was injected.\n", len(renv.Files), fileMatchExpression, pathToAssets), 0))
+		c.UI.Warn(ui.WrapAtLength("Possible causes:", 4))
+		c.UI.Warn(ui.WrapAtLength("  - reactenv has already ran on these files", 4))
+		c.UI.Warn(ui.WrapAtLength("  - Environment variables were not replaced with `__reactenv.<name>` during build", 4))
+		c.UI.Warn("")
+		duration.In(c.UI.WarnColor, "")
+		return 1
+	}
+
+	c.UI.Output(
+		fmt.Sprintf(
+			"Found %d environment %s in %d/%d matching files:",
+			renv.OccurrencesTotal,
+			ui.Pluralize("variable", renv.OccurrencesTotal),
+			len(renv.Files),
+			renv.FilesMatchTotal,
+		),
+	)
+
+	//
+	//
+	//
 
 	allOccurrences := 0
 
@@ -91,14 +120,14 @@ func (c *RunCommand) Run(args []string) int {
 	// - Log errors, warnings and successes
 
 	// Inject environment variables into .js files
-	for _, file := range javascriptFiles {
+	for _, file := range renv.Files {
 		// Read .js file
-		filePath := path.Join(pathToAssets, file.Name())
+		filePath := path.Join(pathToAssets, (*file).Name())
 		fileContents, err := os.ReadFile(filePath)
 		fileContentsNew := make([]byte, 0, len(fileContents))
 
 		if err != nil {
-			c.UI.Error(fmt.Sprintf("Error when reading file '%s'.\n", file.Name()))
+			c.UI.Error(fmt.Sprintf("Error when reading file '%s'.\n", (*file).Name()))
 			c.UI.Error(fmt.Sprintf("%v", err))
 			os.Exit(1)
 		}
@@ -141,21 +170,11 @@ func (c *RunCommand) Run(args []string) int {
 		fileContentsNew = append(fileContentsNew, fileContents[lastIndex:]...)
 
 		// Write .js file
-		if err := os.WriteFile(filePath, fileContentsNew, 0644); err != nil {
-			c.UI.Error(fmt.Sprintf("Error when writing to file '%s'.\n", filePath))
-			c.UI.Error(fmt.Sprintf("%v", err))
-			os.Exit(1)
-		}
-	}
-
-	if allOccurrences == 0 {
-		c.UI.Warn(ui.WrapAtLength(fmt.Sprintf("No reactenv environment variables were found in any of the .js files within '%s', therefore nothing was injected.\n", pathToAssets), 0))
-		c.UI.Warn(ui.WrapAtLength("Possible causes:", 4))
-		c.UI.Warn(ui.WrapAtLength("  - Environment variables were not replaced with `__reactenv.<name>` during build", 4))
-		c.UI.Warn(ui.WrapAtLength("  - 'reactenv' has already ran on these files", 4))
-		c.UI.Warn("")
-		duration.In(c.UI.WarnColor, "")
-		return 1
+		// if err := os.WriteFile(filePath, fileContentsNew, 0644); err != nil {
+		// 	c.UI.Error(fmt.Sprintf("Error when writing to file '%s'.\n", filePath))
+		// 	c.UI.Error(fmt.Sprintf("%v", err))
+		// 	os.Exit(1)
+		// }
 	}
 
 	duration.In(c.UI.SuccessColor, fmt.Sprintf("Injected '%d' environment variables", allOccurrences))
