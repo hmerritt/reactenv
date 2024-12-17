@@ -17,6 +17,8 @@ Useful for creating generic Docker images. Build your app once and add build fil
 -   (Optional) Bundler plugins to automate processing `process.env` values during build
     -   [Webpack plugin `@reactenv/webpack`](https://github.com/hmerritt/reactenv/tree/master/npm/plugin-webpack)
 
+https://github.com/user-attachments/assets/c51465c9-d828-45e5-b469-a95e743d7d02
+
 ### Jump to:
 
 -   [Install](#install)
