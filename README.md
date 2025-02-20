@@ -2,7 +2,7 @@
 
 [![](https://img.shields.io/npm/v/%40reactenv%2Fcli)](https://www.npmjs.com/package/@reactenv/cli)
 
-Inject environment variables into a **built** react app (after `npm build`).
+Inject environment variables into a **bundled** react app (after `build`).
 
 > Build once, configure later.
 
