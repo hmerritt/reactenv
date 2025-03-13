@@ -133,7 +133,7 @@ ENTRYPOINT ["sh", "docker-entrypoint.sh"]
 ```sh
 # File: docker-entrypoint.sh
 
-reactenv /usr/share/nginx/html            # run reactenv in build directory
+reactenv run /usr/share/nginx/html        # run reactenv in build directory
 
 if [ "${?}" != "0" ]; then                # exit entrypoint script if reactenv failed
     exit 1
