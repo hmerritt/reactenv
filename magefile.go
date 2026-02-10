@@ -254,7 +254,6 @@ func UpdateDeps() error {
 	defer log.End()
 	return RunSync([][]string{
 		{"go", "get", "-u", "all"},
-		{"go", "mod", "vendor"},
 		{"go", "mod", "tidy"},
 	})
 }
