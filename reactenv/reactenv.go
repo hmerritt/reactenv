@@ -1,6 +1,7 @@
 package reactenv
 
 import (
+	"bytes"
 	"fmt"
 	"io/fs"
 	"os"
@@ -122,6 +123,78 @@ func (r *Reactenv) FilesWalkContents(fileCb func(fileIndex int, file fs.DirEntry
 	return nil
 }
 
+// Strictly locates all instances of valid reactenv variables and returns their byte
+// start and end indices.
+//
+// This implementation allows for side-by-side occurrences, which a regex pattern
+// match would not (without an unsupported lookahead assertion).
+func FindAllOccurrenceBytePositions(data []byte, prefix []byte) [][]int {
+	// Guard against infinite loop allocation caused by empty prefixes.
+	if len(prefix) == 0 {
+		return nil
+	}
+
+	var indices [][]int
+
+	// Establish absolute boundaries by finding all prefix locations
+	var prefixStarts []int
+	offset := 0
+	for {
+		idx := bytes.Index(data[offset:], prefix)
+		if idx == -1 {
+			break
+		}
+		absoluteIdx := offset + idx
+		prefixStarts = append(prefixStarts, absoluteIdx)
+		offset = absoluteIdx + len(prefix)
+	}
+
+	// Iterate through boundaries and enforce positional grammar
+	for i, start := range prefixStarts {
+		current := start + len(prefix)
+
+		limit := len(data)
+		if i+1 < len(prefixStarts) {
+			limit = prefixStarts[i+1]
+		}
+
+		// Validate the initial character (cannot be a numeral).
+		if current < limit {
+			firstByte := data[current]
+			isValidStart := (firstByte >= 'a' && firstByte <= 'z') ||
+				(firstByte >= 'A' && firstByte <= 'Z') ||
+				firstByte == '_' || firstByte == '$'
+
+			if !isValidStart {
+				// Abort: The character following the dot is invalid
+				continue
+			}
+			current++
+		} else {
+			// Abort: The string terminates immediately after the dot
+			continue
+		}
+
+		// Scan forward for all subsequent valid identifier bytes
+		for current < limit {
+			b := data[current]
+			isValid := (b >= 'a' && b <= 'z') ||
+				(b >= 'A' && b <= 'Z') ||
+				(b >= '0' && b <= '9') ||
+				b == '_' || b == '$'
+
+			if !isValid {
+				break
+			}
+			current++
+		}
+
+		indices = append(indices, []int{start, current})
+	}
+
+	return indices
+}
+
 // Walks every file and populates `Reactenv.Occurrences*` fields.
 func (r *Reactenv) FindOccurrences() error {
 	// Reset occurrence fields
@@ -136,12 +209,8 @@ func (r *Reactenv) FindOccurrences() error {
 	fileIndexesToRemove := make(map[int]int, 0)
 
 	err := r.FilesWalkContents(func(fileIndex int, file fs.DirEntry, filePath string, fileContents []byte) error {
-		matches, err := regexp.Compile(REACTENV_FIND_EXPRESSION)
-		if err != nil {
-			return err
-		}
-
-		fileOccurrences := matches.FindAllIndex(fileContents, -1)
+		prefix := fmt.Appendf([]byte(""), "%s.", REACTENV_PREFIX)
+		fileOccurrences := FindAllOccurrenceBytePositions(fileContents, prefix)
 
 		fileOccurrencesToStore := make([]Occurrence, 0, len(fileOccurrences))
 		r.OccurrencesTotal += len(fileOccurrences)
