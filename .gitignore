@@ -12,6 +12,8 @@ node_modules/
 *.tar
 *.tar.gz
 
+cover.out
+
 !npm/reactenv/bin/reactenv
 npm/reactenv-darwin-arm64/reactenv
 npm/reactenv-darwin-x64/reactenv
