@@ -22,7 +22,7 @@ func (c *RunCommand) Help() string {
 	jsInfo := c.UI.Colorize(".js", c.UI.InfoColor)
 	helpText := fmt.Sprintf(`
 Usage: reactenv run [options] PATH
-  
+
 Inject environment variables into a built react app.
 
 Example:
@@ -84,7 +84,13 @@ func (c *RunCommand) Run(args []string) int {
 		os.Exit(1)
 	}
 
-	renv.FindOccurrences()
+	err = renv.FindOccurrences()
+
+	if err != nil {
+		c.UI.Error(fmt.Sprintf("There was an error while searching for __reactenv variables in the %d '%s' files within '%s', therefore nothing was injected.\n", renv.FilesMatchTotal, fileMatchExpression, pathToAssets))
+		c.UI.Error(fmt.Sprintf("%v", err))
+		os.Exit(1)
+	}
 
 	if renv.OccurrencesTotal == 0 {
 		c.UI.Warn(ui.WrapAtLength(fmt.Sprintf("No reactenv environment variables were found in any of the %d '%s' files within '%s', therefore nothing was injected.\n", renv.FilesMatchTotal, fileMatchExpression, pathToAssets), 0))

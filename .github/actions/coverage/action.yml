@@ -1,0 +1,10 @@
+name: Test Coverage
+description: Send coverage to Coveralls
+
+runs:
+  using: "composite"
+  steps:
+    - name: Send coverage
+      uses: shogo82148/actions-goveralls@v1
+      with:
+        path-to-profile: cover.out
