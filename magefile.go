@@ -55,6 +55,14 @@ func Test() error {
 	})
 }
 
+func TestWatch() error {
+	log := NewLogger()
+	defer log.End()
+	return RunSync([][]string{
+		{"gotestsum", "--watch", "--format", "pkgname", "--", "--cover", "./..."},
+	})
+}
+
 func Bench() error {
 	log := NewLogger()
 	defer log.End()
