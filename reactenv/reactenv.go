@@ -62,6 +62,7 @@ func NewReactenv(ui *ui.Ui) *Reactenv {
 // Populates `Reactenv.Files` with all files that match `fileMatchExpression`
 func (r *Reactenv) FindFiles(dir string, fileMatchExpression string) error {
 	r.Dir = dir
+	r.Files = make([]*fs.DirEntry, 0)
 	files, err := os.ReadDir(r.Dir)
 
 	if err != nil {
@@ -76,7 +77,8 @@ func (r *Reactenv) FindFiles(dir string, fileMatchExpression string) error {
 
 	for _, file := range files {
 		if fileMatcher.MatchString(file.Name()) && !file.IsDir() {
-			r.Files = append(r.Files, &file)
+			fileEntry := file
+			r.Files = append(r.Files, &fileEntry)
 		}
 	}
 
@@ -121,7 +123,7 @@ func (r *Reactenv) FilesWalkContents(fileCb func(fileIndex int, file fs.DirEntry
 }
 
 // Walks every file and populates `Reactenv.Occurrences*` fields.
-func (r *Reactenv) FindOccurrences() {
+func (r *Reactenv) FindOccurrences() error {
 	// Reset occurrence fields
 	r.OccurrencesTotal = 0
 	r.OccurrencesByFile = make([]*FileOccurrences, 0)
@@ -133,8 +135,13 @@ func (r *Reactenv) FindOccurrences() {
 	newOccurrencesByFile := make([]*FileOccurrences, 0)
 	fileIndexesToRemove := make(map[int]int, 0)
 
-	r.FilesWalkContents(func(fileIndex int, file fs.DirEntry, filePath string, fileContents []byte) error {
-		fileOccurrences := regexp.MustCompile(REACTENV_FIND_EXPRESSION).FindAllIndex(fileContents, -1)
+	err := r.FilesWalkContents(func(fileIndex int, file fs.DirEntry, filePath string, fileContents []byte) error {
+		matches, err := regexp.Compile(REACTENV_FIND_EXPRESSION)
+		if err != nil {
+			return err
+		}
+
+		fileOccurrences := matches.FindAllIndex(fileContents, -1)
 
 		fileOccurrencesToStore := make([]Occurrence, 0, len(fileOccurrences))
 		r.OccurrencesTotal += len(fileOccurrences)
@@ -166,6 +173,10 @@ func (r *Reactenv) FindOccurrences() {
 		return nil
 	})
 
+	if err != nil {
+		return err
+	}
+
 	// Remove files with no occurrences
 	if len(fileIndexesToRemove) > 0 {
 		for fileIndex, file := range r.Files {
@@ -178,6 +189,8 @@ func (r *Reactenv) FindOccurrences() {
 		r.Files = newFiles
 		r.OccurrencesByFile = newOccurrencesByFile
 	}
+
+	return nil
 }
 
 func (r *Reactenv) ReplaceOccurrences() {
