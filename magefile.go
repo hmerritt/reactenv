@@ -51,7 +51,7 @@ func Test() error {
 	log := NewLogger()
 	defer log.End()
 	return RunSync([][]string{
-		{"gotestsum", "--format", "pkgname", "--", "--cover", "./..."},
+		{"gotestsum", "--format", "pkgname", "--", "-coverprofile", "cover.out", "./..."},
 	})
 }
 
@@ -59,7 +59,7 @@ func TestWatch() error {
 	log := NewLogger()
 	defer log.End()
 	return RunSync([][]string{
-		{"gotestsum", "--watch", "--format", "pkgname", "--", "--cover", "./..."},
+		{"gotestsum", "--watch", "--format", "pkgname", "--", "./..."},
 	})
 }
 
@@ -67,7 +67,7 @@ func Bench() error {
 	log := NewLogger()
 	defer log.End()
 	return RunSync([][]string{
-		{"gotestsum", "--format", "pkgname", "--", "--cover", "-bench", ".", "-benchmem", "./..."},
+		{"gotestsum", "--format", "pkgname", "--", "-bench", ".", "-benchmem", "./..."},
 	})
 }
 

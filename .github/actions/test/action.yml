@@ -1,0 +1,15 @@
+name: Test
+description: Run Go tests
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run Tests
+      shell: bash
+      run: mage -v test
+
+    - name: Run Build
+      shell: bash
+      run: |
+        mage -v build:release
+        ls -la bin
