@@ -13,8 +13,7 @@ import (
 )
 
 const (
-	REACTENV_PREFIX          = "__reactenv"
-	REACTENV_FIND_EXPRESSION = `(__reactenv\.[a-zA-Z_$][0-9a-zA-Z_$]*)`
+	REACTENV_PREFIX = "__reactenv"
 )
 
 type Reactenv struct {
@@ -23,7 +22,7 @@ type Reactenv struct {
 	// Path of directory to scan
 	Dir string
 
-	// Total file count (that match `REACTENV_FIND_EXPRESSION`, within `Dir`)
+	// Total file count - that have matches - within specified `Dir`
 	FilesMatchTotal int
 	// Files with occurrences (not every matched file will have an occurrence, so this may be less than `FilesMatchTotal`)
 	Files []*fs.DirEntry
