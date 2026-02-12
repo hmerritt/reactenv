@@ -233,9 +233,64 @@ func TestFindAllOccurrenceBytePositions(t *testing.T) {
 			expected: nil, // The function should bypass this entirely.
 		},
 		{
-			name:     "Acceptance of leading dollar sign and underscore",
-			input:    "__reactenv.$VALID __reactenv._VALID",
-			expected: [][]int{{0, 17}, {18, 35}},
+			name:     "Rejection of leading dollar sign",
+			input:    "__reactenv.$INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Rejection of leading percent sign",
+			input:    "__reactenv.%INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Rejection of leading exclamation mark",
+			input:    "__reactenv.!INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Rejection of leading ampersand",
+			input:    "__reactenv.&INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Rejection of leading asterisk",
+			input:    "__reactenv.*INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Rejection of leading open parenthesis",
+			input:    "__reactenv.(INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Rejection of leading close parenthesis",
+			input:    "__reactenv.)INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Rejection of leading open square bracket",
+			input:    "__reactenv.[INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Rejection of leading close square bracket",
+			input:    "__reactenv.]INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Rejection of leading open curly brace",
+			input:    "__reactenv.{INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Rejection of leading close curly brace",
+			input:    "__reactenv.}INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Acceptance of leading underscore",
+			input:    "__reactenv._VALID",
+			expected: [][]int{{0, 17}},
 		},
 		{
 			name:     "Early termination upon encountering invalid characters",

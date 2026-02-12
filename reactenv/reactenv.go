@@ -162,7 +162,7 @@ func FindAllOccurrenceBytePositions(data []byte, prefix []byte) [][]int {
 			firstByte := data[current]
 			isValidStart := (firstByte >= 'a' && firstByte <= 'z') ||
 				(firstByte >= 'A' && firstByte <= 'Z') ||
-				firstByte == '_' || firstByte == '$'
+				firstByte == '_'
 
 			if !isValidStart {
 				// Abort: The character following the dot is invalid
@@ -180,7 +180,7 @@ func FindAllOccurrenceBytePositions(data []byte, prefix []byte) [][]int {
 			isValid := (b >= 'a' && b <= 'z') ||
 				(b >= 'A' && b <= 'Z') ||
 				(b >= '0' && b <= '9') ||
-				b == '_' || b == '$'
+				b == '_'
 
 			if !isValid {
 				break
