@@ -1,3 +1,4 @@
+//coverage:ignore file
 package version
 
 const (
@@ -14,7 +15,7 @@ var (
 	// The compilation date. This will be filled in by the compiler.
 	BuildDate string
 
-	Version           = "0.1.96"
+	Version           = "0.1.116"
 	VersionPrerelease = ""
 	VersionMetadata   = ""
 )

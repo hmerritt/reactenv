@@ -1,8 +1,10 @@
+//coverage:ignore file
 package version
 
 import (
 	"bytes"
 	"fmt"
+	"os"
 )
 
 // VersionInfo
@@ -90,6 +92,14 @@ func (c *VersionInfo) FullVersionNumber(rev bool) string {
 }
 
 func PrintTitle() {
+	// Skip printing title and version, usually because the output needs to be pipe-able, when:
+	// - `completion` command
+	// - `--version` flag
+	args := os.Args[1:]
+	if len(args) > 0 && (args[0] == "completion" || args[0] == "--version") {
+		return
+	}
+
 	// Get version info
 	versionStruct := GetVersion()
 

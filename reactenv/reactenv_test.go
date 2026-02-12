@@ -40,18 +40,150 @@ func TestReactenvFindFilesMatchesFilesAndIgnoresDirs(t *testing.T) {
 	require.Equal(t, 2, renv.FilesMatchTotal, "FilesMatchTotal")
 
 	require.Len(t, renv.Files, 2, "Files length")
+	require.Len(t, renv.FileRelPaths, 2, "FileRelPaths length")
 
-	found := map[string]bool{}
-	for _, file := range renv.Files {
-		found[(*file).Name()] = true
+	expected := []string{"alpha.js", "beta.js"}
+
+	require.Equal(t, expected, []string{(*renv.Files[0]).Name(), (*renv.Files[1]).Name()})
+	require.Equal(t, expected, renv.FileRelPaths, "matched relative paths")
+}
+
+func TestReactenvFindFilesMatchesFilesRecursively(t *testing.T) {
+	tempDir := t.TempDir()
+
+	writeTestFile(t, tempDir, "root.js")
+
+	nestedDir := filepath.Join(tempDir, "nested")
+	require.NoError(t, os.Mkdir(nestedDir, 0755), "create nested dir")
+	writeTestFile(t, nestedDir, "nested.js")
+
+	deepDir := filepath.Join(nestedDir, "deep")
+	require.NoError(t, os.Mkdir(deepDir, 0755), "create deep dir")
+	writeTestFile(t, deepDir, "deep.js")
+
+	renv := NewReactenv(nil)
+
+	require.NoError(t, renv.FindFiles(tempDir, `.*\.js$`), "FindFiles returned error")
+	require.Equal(t, 3, renv.FilesMatchTotal, "FilesMatchTotal")
+	require.Len(t, renv.Files, 3, "Files length")
+	require.Len(t, renv.FileRelPaths, 3, "FileRelPaths length")
+
+	expected := []string{
+		"nested/deep/deep.js",
+		"nested/nested.js",
+		"root.js",
 	}
 
-	expected := map[string]bool{
-		"alpha.js": true,
-		"beta.js":  true,
+	require.Equal(t, expected, renv.FileRelPaths, "matched relative paths")
+}
+
+func TestReactenvFindFilesAutoFallsBackToGlob(t *testing.T) {
+	tempDir := t.TempDir()
+
+	nestedDir := filepath.Join(tempDir, "nested")
+	require.NoError(t, os.Mkdir(nestedDir, 0755), "create nested dir")
+	writeTestFile(t, nestedDir, "nested.js")
+
+	renv := NewReactenv(nil)
+
+	require.NoError(t, renv.FindFiles(tempDir, "**/*.js"), "FindFiles returned error")
+	require.Equal(t, 1, renv.FilesMatchTotal, "FilesMatchTotal")
+
+	expected := []string{
+		"nested/nested.js",
 	}
 
-	require.Equal(t, expected, found, "matched files")
+	require.Equal(t, expected, renv.FileRelPaths, "matched relative paths")
+}
+
+func TestReactenvFindFilesRegexMatchesRelativePath(t *testing.T) {
+	tempDir := t.TempDir()
+
+	writeTestFile(t, tempDir, "root.js")
+
+	nestedDir := filepath.Join(tempDir, "nested")
+	require.NoError(t, os.Mkdir(nestedDir, 0755), "create nested dir")
+	writeTestFile(t, nestedDir, "nested.js")
+
+	renv := NewReactenv(nil)
+
+	require.NoError(t, renv.FindFiles(tempDir, `^nested/.*\.js$`), "FindFiles returned error")
+	require.Equal(t, 1, renv.FilesMatchTotal, "FilesMatchTotal")
+
+	expected := []string{
+		"nested/nested.js",
+	}
+
+	require.Equal(t, expected, renv.FileRelPaths, "matched relative paths")
+}
+
+func TestReactenvFindFilesSupportsGlobPrefix(t *testing.T) {
+	tempDir := t.TempDir()
+
+	nestedDir := filepath.Join(tempDir, "nested")
+	require.NoError(t, os.Mkdir(nestedDir, 0755), "create nested dir")
+	writeTestFile(t, nestedDir, "nested.js")
+
+	renv := NewReactenv(nil)
+
+	require.NoError(t, renv.FindFiles(tempDir, "glob:**/*.js"), "FindFiles returned error")
+	require.Equal(t, 1, renv.FilesMatchTotal, "FilesMatchTotal")
+
+	expected := []string{
+		"nested/nested.js",
+	}
+
+	require.Equal(t, expected, renv.FileRelPaths, "matched relative paths")
+}
+
+func TestReactenvFindFilesSkipsNodeModules(t *testing.T) {
+	tempDir := t.TempDir()
+
+	writeTestFile(t, tempDir, "root.js")
+
+	nodeModulesDir := filepath.Join(tempDir, "node_modules")
+	require.NoError(t, os.Mkdir(nodeModulesDir, 0755), "create node_modules dir")
+	writeTestFile(t, nodeModulesDir, "ignored.js")
+
+	nestedDir := filepath.Join(tempDir, "nested")
+	require.NoError(t, os.Mkdir(nestedDir, 0755), "create nested dir")
+	writeTestFile(t, nestedDir, "nested.js")
+
+	renv := NewReactenv(nil)
+
+	require.NoError(t, renv.FindFiles(tempDir, `.*\.js$`), "FindFiles returned error")
+	require.Equal(t, 2, renv.FilesMatchTotal, "FilesMatchTotal")
+
+	expected := []string{
+		"nested/nested.js",
+		"root.js",
+	}
+
+	require.Equal(t, expected, renv.FileRelPaths, "matched relative paths")
+}
+
+func TestReactenvFindFilesAllowsRootNodeModules(t *testing.T) {
+	tempDir := t.TempDir()
+
+	nodeModulesDir := filepath.Join(tempDir, "node_modules")
+	require.NoError(t, os.Mkdir(nodeModulesDir, 0755), "create node_modules dir")
+	writeTestFile(t, nodeModulesDir, "root.js")
+
+	nestedDir := filepath.Join(nodeModulesDir, "nested")
+	require.NoError(t, os.Mkdir(nestedDir, 0755), "create nested dir")
+	writeTestFile(t, nestedDir, "nested.js")
+
+	renv := NewReactenv(nil)
+
+	require.NoError(t, renv.FindFiles(nodeModulesDir, `.*\.js$`), "FindFiles returned error")
+	require.Equal(t, 2, renv.FilesMatchTotal, "FilesMatchTotal")
+
+	expected := []string{
+		"nested/nested.js",
+		"root.js",
+	}
+
+	require.Equal(t, expected, renv.FileRelPaths, "matched relative paths")
 }
 
 func TestReactenvFindFilesReturnsErrorForMissingDir(t *testing.T) {
@@ -65,7 +197,14 @@ func TestReactenvFindFilesReturnsErrorForBadRegex(t *testing.T) {
 	renv := NewReactenv(nil)
 	tempDir := t.TempDir()
 
-	require.Error(t, renv.FindFiles(tempDir, `[`), "expected error for invalid regex")
+	err := renv.FindFiles(tempDir, `[`)
+	require.Error(t, err, "expected error for invalid matcher")
+
+	var matchErr *FileMatchError
+	require.ErrorAs(t, err, &matchErr)
+	require.Equal(t, fileMatchModeAuto, matchErr.Mode)
+	require.NotNil(t, matchErr.AutoRegexErr)
+	require.NotNil(t, matchErr.Err)
 }
 
 func TestReactenvFilesWalkCallsCallbackInOrder(t *testing.T) {
@@ -233,9 +372,64 @@ func TestFindAllOccurrenceBytePositions(t *testing.T) {
 			expected: nil, // The function should bypass this entirely.
 		},
 		{
-			name:     "Acceptance of leading dollar sign and underscore",
-			input:    "__reactenv.$VALID __reactenv._VALID",
-			expected: [][]int{{0, 17}, {18, 35}},
+			name:     "Rejection of leading dollar sign",
+			input:    "__reactenv.$INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Rejection of leading percent sign",
+			input:    "__reactenv.%INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Rejection of leading exclamation mark",
+			input:    "__reactenv.!INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Rejection of leading ampersand",
+			input:    "__reactenv.&INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Rejection of leading asterisk",
+			input:    "__reactenv.*INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Rejection of leading open parenthesis",
+			input:    "__reactenv.(INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Rejection of leading close parenthesis",
+			input:    "__reactenv.)INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Rejection of leading open square bracket",
+			input:    "__reactenv.[INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Rejection of leading close square bracket",
+			input:    "__reactenv.]INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Rejection of leading open curly brace",
+			input:    "__reactenv.{INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Rejection of leading close curly brace",
+			input:    "__reactenv.}INVALID",
+			expected: nil,
+		},
+		{
+			name:     "Acceptance of leading underscore",
+			input:    "__reactenv._VALID",
+			expected: [][]int{{0, 17}},
 		},
 		{
 			name:     "Early termination upon encountering invalid characters",
@@ -371,6 +565,7 @@ func TestReactenvFindOccurrencesFiltersFilesWithoutMatches(t *testing.T) {
 
 	require.Equal(t, 3, renv.OccurrencesTotal)
 	require.Len(t, renv.Files, 2)
+	require.Len(t, renv.FileRelPaths, 2)
 	require.Len(t, renv.OccurrencesByFile, 2)
 
 	counts := map[string]int{}
@@ -382,6 +577,13 @@ func TestReactenvFindOccurrencesFiltersFilesWithoutMatches(t *testing.T) {
 		"a.js": 1,
 		"c.js": 2,
 	}, counts)
+
+	paths := map[string]bool{}
+	for _, relPath := range renv.FileRelPaths {
+		paths[relPath] = true
+	}
+
+	require.Equal(t, map[string]bool{"a.js": true, "c.js": true}, paths)
 
 	expectedKeys := map[string]bool{
 		"A": true,
@@ -408,6 +610,7 @@ func TestReactenvFindOccurrencesNoMatchesClearsFiles(t *testing.T) {
 
 	require.Equal(t, 0, renv.OccurrencesTotal)
 	require.Empty(t, renv.Files)
+	require.Empty(t, renv.FileRelPaths)
 	require.Empty(t, renv.OccurrencesByFile)
 	require.Empty(t, renv.OccurrenceKeys)
 	require.Empty(t, renv.OccurrenceKeysReplacement)
@@ -429,6 +632,7 @@ func TestReactenvFindOccurrencesResetsStateOnRepeat(t *testing.T) {
 	require.Equal(t, map[string]bool{"ONE": true}, renv.OccurrenceKeys)
 	require.Equal(t, map[string]string{"ONE": "1"}, renv.OccurrenceKeysReplacement)
 	require.Len(t, renv.Files, 1)
+	require.Len(t, renv.FileRelPaths, 1)
 	require.Len(t, renv.OccurrencesByFile, 1)
 
 	require.NoError(t, os.WriteFile(filePath, []byte("no occurrences"), 0644))
@@ -437,6 +641,7 @@ func TestReactenvFindOccurrencesResetsStateOnRepeat(t *testing.T) {
 
 	require.Equal(t, 0, renv.OccurrencesTotal)
 	require.Empty(t, renv.Files)
+	require.Empty(t, renv.FileRelPaths)
 	require.Empty(t, renv.OccurrencesByFile)
 	require.Empty(t, renv.OccurrenceKeys)
 	require.Empty(t, renv.OccurrenceKeysReplacement)
@@ -464,10 +669,12 @@ func FuzzReactenvFindOccurrences(f *testing.F) {
 		expectedTotal := len(matches)
 
 		require.Equal(t, expectedTotal, renv.OccurrencesTotal)
+		require.Equal(t, len(renv.Files), len(renv.FileRelPaths))
 		require.Equal(t, len(renv.Files), len(renv.OccurrencesByFile))
 
 		if expectedTotal == 0 {
 			require.Empty(t, renv.Files)
+			require.Empty(t, renv.FileRelPaths)
 			require.Empty(t, renv.OccurrencesByFile)
 			require.Empty(t, renv.OccurrenceKeys)
 			return

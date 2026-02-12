@@ -8,7 +8,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    name: Run Tests
+    name: Tests
 
     steps:
       - uses: actions/checkout@v6
@@ -21,7 +21,7 @@ jobs:
   release:
     needs: test
     runs-on: ubuntu-latest
-    name: Build release binaries
+    name: Build and Release
 
     steps:
       - uses: actions/checkout@v6

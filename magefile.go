@@ -64,6 +64,16 @@ func TestWatch() error {
 	})
 }
 
+// Prints coverage report
+func Coverage() error {
+	log := NewLogger()
+	defer log.End()
+	return RunSync([][]string{
+		{"go-ignore-cov", "--file", "cover.out"},
+		{"go", "tool", "cover", "-func", "cover.out"},
+	})
+}
+
 func Bench() error {
 	log := NewLogger()
 	defer log.End()

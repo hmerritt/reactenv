@@ -1,6 +1,6 @@
 # reactENV
 
-[![](https://img.shields.io/npm/v/%40reactenv%2Fcli)](https://www.npmjs.com/package/@reactenv/cli)
+[![](https://img.shields.io/npm/v/%40reactenv%2Fcli)](https://www.npmjs.com/package/@reactenv/cli) [![Coverage Status](https://coveralls.io/repos/github/hmerritt/reactenv/badge.svg?branch=master)](https://coveralls.io/github/hmerritt/reactenv?branch=master)
 
 Inject environment variables into a **bundled** react app (after `build`).
 
@@ -10,23 +10,23 @@ Useful for creating generic Docker images. Build your app once and add build fil
 
 ### Features ⚡
 
--   No runtime overhead
--   No app code changes required
--   Injection is strict by default, and will error if any values are missing
--   Blazing fast environment variable injection (~1ms for a basic react app)
--   (Optional) Bundler plugins to automate processing `process.env` values during build
-    -   [Webpack plugin `@reactenv/webpack`](https://github.com/hmerritt/reactenv/tree/master/npm/plugin-webpack)
+- No runtime overhead
+- No app code changes required
+- Injection is strict by default, and will error if any values are missing
+- Blazing fast environment variable injection (~1ms for a basic react app)
+- (Optional) Bundler plugins to automate processing `process.env` values during build
+    - [Webpack plugin `@reactenv/webpack`](https://github.com/hmerritt/reactenv/tree/master/npm/plugin-webpack)
 
 https://github.com/user-attachments/assets/c51465c9-d828-45e5-b469-a95e743d7d02
 
 ### Jump to:
 
--   [Install](#install)
--   [Usage](#usage)
--   [Example](#example)
--   [Reasoning](#reasoning)
--   [Aims](#aims)
--   [Licence](#licence)
+- [Install](#install)
+- [Usage](#usage)
+- [Example](#example)
+- [Reasoning](#reasoning)
+- [Aims](#aims)
+- [Licence](#licence)
 
 ## Install
 
@@ -69,8 +69,12 @@ It uses the current host enviroment variables and will replace all matches in th
 All you need to do is run `reactenv run <path-to-js-files>` and it will do it's thing:
 
 ```sh
-# Inject environment variables into all `.js` files in `dist` directory
+# Inject environment variables into all `.js` files in `dist` directory (recursively)
 $ reactenv run dist
+
+# Override the file matcher (regex or glob, matching relative paths)
+$ reactenv run --match "glob:**/*.mjs" dist
+$ reactenv run --match "regex:^assets/.*\\.js$" dist
 ```
 
 After running `reactenv`, your app is ready to be deployed and served!
@@ -177,10 +181,10 @@ I'm aware that this solution has it's drawbacks and I don't recommend it for eve
 
 Since this is being ran **after** a build, this program needs to be 100% reliable. If somthing does go wrong, it catches and reports it so a failed build does not end up in production.
 
--   Fast
--   Reliable
--   Easy to **debug**
--   Simple to use
+- Fast
+- Reliable
+- Easy to **debug**
+- Simple to use
 
 ## Developing
 
