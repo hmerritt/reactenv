@@ -9,9 +9,11 @@ require (
 	github.com/magefile/mage v1.15.0
 	github.com/mitchellh/cli v1.1.5
 	github.com/mitchellh/gox v1.0.1
+	github.com/pkg/sftp v1.13.10
 	github.com/posener/complete v1.2.3
 	github.com/schollz/progressbar/v3 v3.19.0
 	github.com/stretchr/testify v1.11.1
+	golang.org/x/crypto v0.48.0
 	gotest.tools/gotestsum v1.13.0
 )
 
@@ -39,12 +41,10 @@ require (
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/iochan v1.0.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
-	github.com/pkg/sftp v1.13.10 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
-	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/mod v0.33.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
