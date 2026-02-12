@@ -137,7 +137,11 @@ func (Build) Release() error {
 // Release
 // ----------------------------------------------------------------------------
 
-// Prep for release (zip, copy each binary to npm directories, copy zips to dist directory)
+// Prep for release
+//
+// - Copy each binary to `npm` directories
+//
+// - Zip up binaries, then copy zips to `dist` directory
 func (Release) Prep() error {
 	log := NewLogger()
 	defer log.End()
@@ -232,7 +236,8 @@ func (Release) Prep() error {
 	return nil
 }
 
-// Upload release binaries to FTP server.
+// Upload all files in a directory to an FTP server (configurable). Used to upload
+// all release zips in `dist`.
 //
 // A new directory is created on the FTP server for the release version,
 // and the release files (everything in `LOCAL_PATH` directory) are uploaded to it.
