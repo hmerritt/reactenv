@@ -6,4 +6,6 @@ runs:
   steps:
     - name: Run Tests
       shell: bash
-      run: mage -v test
+      run: |
+        mage -v test
+        go-ignore-cov --file cover.out

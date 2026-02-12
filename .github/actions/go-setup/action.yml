@@ -12,4 +12,5 @@ runs:
       shell: bash
       run: |
         go install github.com/magefile/mage
+        go install github.com/hexira/go-ignore-cov@latest
         mage -v bootstrap
