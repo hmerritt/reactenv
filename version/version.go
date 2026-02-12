@@ -3,6 +3,7 @@ package version
 import (
 	"bytes"
 	"fmt"
+	"os"
 )
 
 // VersionInfo
@@ -90,6 +91,13 @@ func (c *VersionInfo) FullVersionNumber(rev bool) string {
 }
 
 func PrintTitle() {
+	// Check arguments, and skip when:
+	// - `completion` command (output needs to be piped to the shell)
+	args := os.Args[1:]
+	if len(args) > 0 && args[0] == "completion" {
+		return
+	}
+
 	// Get version info
 	versionStruct := GetVersion()
 
