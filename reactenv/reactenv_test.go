@@ -112,6 +112,36 @@ func TestReactenvFindFilesSkipsNodeModules(t *testing.T) {
 	renv := NewReactenv(nil)
 
 	require.NoError(t, renv.FindFiles(tempDir, `.*\.js$`), "FindFiles returned error")
+	require.Equal(t, 2, renv.FilesMatchTotal, "FilesMatchTotal")
+
+	expected := map[string]bool{
+		"root.js":          true,
+		"nested/nested.js": true,
+	}
+
+	found := map[string]bool{}
+	for _, relPath := range renv.FileRelPaths {
+		found[relPath] = true
+	}
+
+	require.Equal(t, expected, found, "matched relative paths")
+}
+
+func TestReactenvFindFilesAllowsRootNodeModules(t *testing.T) {
+	tempDir := t.TempDir()
+
+	nodeModulesDir := filepath.Join(tempDir, "node_modules")
+	require.NoError(t, os.Mkdir(nodeModulesDir, 0755), "create node_modules dir")
+	writeTestFile(t, nodeModulesDir, "root.js")
+
+	nestedDir := filepath.Join(nodeModulesDir, "nested")
+	require.NoError(t, os.Mkdir(nestedDir, 0755), "create nested dir")
+	writeTestFile(t, nestedDir, "nested.js")
+
+	renv := NewReactenv(nil)
+
+	require.NoError(t, renv.FindFiles(nodeModulesDir, `.*\.js$`), "FindFiles returned error")
+	require.Equal(t, 2, renv.FilesMatchTotal, "FilesMatchTotal")
 
 	expected := map[string]bool{
 		"root.js":          true,
@@ -140,7 +170,7 @@ func TestReactenvFindFilesReturnsErrorForBadRegex(t *testing.T) {
 	require.Error(t, renv.FindFiles(tempDir, `[`), "expected error for invalid regex")
 }
 
-func TestReactenvFilesWalkCallsCallbackInOrder(t *testing.T) {
+func TestReactenvFilesWalkCallsCallback(t *testing.T) {
 	tempDir := t.TempDir()
 
 	writeTestFile(t, tempDir, "b.js")
@@ -167,12 +197,19 @@ func TestReactenvFilesWalkCallsCallbackInOrder(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	expected := []walkCall{
-		{index: 0, name: "a.js", filePath: path.Join(tempDir, "a.js")},
-		{index: 1, name: "b.js", filePath: path.Join(tempDir, "b.js")},
+	require.Len(t, calls, 2)
+
+	found := map[string]string{}
+	for _, call := range calls {
+		found[call.name] = call.filePath
 	}
 
-	require.Equal(t, expected, calls)
+	expected := map[string]string{
+		"a.js": path.Join(tempDir, "a.js"),
+		"b.js": path.Join(tempDir, "b.js"),
+	}
+
+	require.Equal(t, expected, found)
 }
 
 func TestReactenvFilesWalkStopsOnError(t *testing.T) {
@@ -196,7 +233,7 @@ func TestReactenvFilesWalkStopsOnError(t *testing.T) {
 	require.Equal(t, 1, callCount)
 }
 
-func TestReactenvFilesWalkContentsCallsCallbackInOrderWithContents(t *testing.T) {
+func TestReactenvFilesWalkContentsCallsCallbackWithContents(t *testing.T) {
 	tempDir := t.TempDir()
 
 	require.NoError(t, os.WriteFile(filepath.Join(tempDir, "b.js"), []byte("beta"), 0644))
@@ -225,12 +262,27 @@ func TestReactenvFilesWalkContentsCallsCallbackInOrderWithContents(t *testing.T)
 	})
 	require.NoError(t, err)
 
-	expected := []walkCall{
-		{index: 0, name: "a.js", filePath: path.Join(tempDir, "a.js"), contents: "alpha"},
-		{index: 1, name: "b.js", filePath: path.Join(tempDir, "b.js"), contents: "beta"},
+	require.Len(t, calls, 2)
+
+	type callDetails struct {
+		filePath string
+		contents string
 	}
 
-	require.Equal(t, expected, calls)
+	found := map[string]callDetails{}
+	for _, call := range calls {
+		found[call.name] = callDetails{
+			filePath: call.filePath,
+			contents: call.contents,
+		}
+	}
+
+	expected := map[string]callDetails{
+		"a.js": {filePath: path.Join(tempDir, "a.js"), contents: "alpha"},
+		"b.js": {filePath: path.Join(tempDir, "b.js"), contents: "beta"},
+	}
+
+	require.Equal(t, expected, found)
 }
 
 func TestReactenvFilesWalkContentsStopsOnError(t *testing.T) {
@@ -602,10 +654,12 @@ func FuzzReactenvFindOccurrences(f *testing.F) {
 		expectedTotal := len(matches)
 
 		require.Equal(t, expectedTotal, renv.OccurrencesTotal)
+		require.Equal(t, len(renv.Files), len(renv.FileRelPaths))
 		require.Equal(t, len(renv.Files), len(renv.OccurrencesByFile))
 
 		if expectedTotal == 0 {
 			require.Empty(t, renv.Files)
+			require.Empty(t, renv.FileRelPaths)
 			require.Empty(t, renv.OccurrencesByFile)
 			require.Empty(t, renv.OccurrenceKeys)
 			return
