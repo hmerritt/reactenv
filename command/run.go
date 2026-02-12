@@ -11,38 +11,40 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type RunCommand struct {
-	UI *ui.Ui
-}
+type RunCommand struct{}
 
 func (c *RunCommand) Synopsis() string {
 	return "Inject environment variables into a built react app"
 }
 
 func (c *RunCommand) Help() string {
-	jsInfo := c.UI.Colorize(".js", c.UI.InfoColor)
+	jsInfo := Ui.Colorize(".js", Ui.InfoColor)
 	helpText := fmt.Sprintf(`
 Usage: reactenv run [options] PATH
 
 Inject environment variables into a built react app.
 
 Example:
-  $ reactenv run ./dist/assets
+  $ reactenv run ./dist
 
-    dist/assets
-    ├── index.css
+    dist/
+    ├── login/
+    │   ├── login.css
+    │   └── login.lazy-b839zm%s
+    ├── user/
+    │   ├── user.css
+    │   └── user.lazy-c7942lh%s <- Runs on all %s files in PATH (recursively)
+    ├── index.html
     ├── index-csxw0qbp%s
-    ├── login.lazy-b839zm%s
-    └── user.lazy-c7942lh%s  <- Runs on all %s files in PATH (recursively)
+    ├── robots.txt
+    └── sitemap.xml
 `, jsInfo, jsInfo, jsInfo, jsInfo)
 
 	return strings.TrimSpace(helpText)
 }
 
-func NewCommandRun(ui *ui.Ui) *cobra.Command {
-	run := &RunCommand{
-		UI: ui,
-	}
+func NewCommandRun() *cobra.Command {
+	run := &RunCommand{}
 
 	cmd := &cobra.Command{
 		Use:   "run PATH",
@@ -54,24 +56,24 @@ func NewCommandRun(ui *ui.Ui) *cobra.Command {
 	}
 
 	cmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
-		run.UI.Output(run.Help())
+		Ui.Output(run.Help())
 	})
 
 	return cmd
 }
 
 func (c *RunCommand) Run(args []string) int {
-	duration := ui.InitDuration(c.UI)
+	duration := ui.InitDuration(Ui)
 
 	if len(args) == 0 {
-		c.UI.Error("No asset PATH entered.")
+		Ui.Error("No asset PATH entered.")
 		c.exitWithHelp()
 	}
 
 	pathToAssets := args[0]
 
 	if _, err := os.Stat(pathToAssets); os.IsNotExist(err) {
-		c.UI.Error(fmt.Sprintf("File PATH '%s' does not exist.", pathToAssets))
+		Ui.Error(fmt.Sprintf("File PATH '%s' does not exist.", pathToAssets))
 		c.exitWithHelp()
 	}
 
@@ -80,45 +82,45 @@ func (c *RunCommand) Run(args []string) int {
 	_, err := regexp.Compile(fileMatchExpression)
 
 	if err != nil {
-		c.UI.Error(fmt.Sprintf("File match expression '%s' is not valid.\n", fileMatchExpression))
-		c.UI.Error(fmt.Sprintf("%v", err))
+		Ui.Error(fmt.Sprintf("File match expression '%s' is not valid.\n", fileMatchExpression))
+		Ui.Error(fmt.Sprintf("%v", err))
 		c.exitWithHelp()
 	}
 
-	renv := reactenv.NewReactenv(c.UI)
+	renv := reactenv.NewReactenv(Ui)
 
 	err = renv.FindFiles(pathToAssets, fileMatchExpression)
 
 	if err != nil {
-		c.UI.Error(fmt.Sprintf("Error reading files in PATH '%s'.\n", pathToAssets))
-		c.UI.Error(fmt.Sprintf("%v", err))
+		Ui.Error(fmt.Sprintf("Error reading files in PATH '%s'.\n", pathToAssets))
+		Ui.Error(fmt.Sprintf("%v", err))
 		os.Exit(1)
 	}
 
 	if len(renv.Files) == 0 {
-		c.UI.Error(fmt.Sprintf("No files found in path '%s' using matcher '%s'", pathToAssets, fileMatchExpression))
+		Ui.Error(fmt.Sprintf("No files found in path '%s' using matcher '%s'", pathToAssets, fileMatchExpression))
 		os.Exit(1)
 	}
 
 	err = renv.FindOccurrences()
 
 	if err != nil {
-		c.UI.Error(fmt.Sprintf("There was an error while searching for __reactenv variables in the %d '%s' files within '%s', therefore nothing was injected.\n", renv.FilesMatchTotal, fileMatchExpression, pathToAssets))
-		c.UI.Error(fmt.Sprintf("%v", err))
+		Ui.Error(fmt.Sprintf("There was an error while searching for __reactenv variables in the %d '%s' files within '%s', therefore nothing was injected.\n", renv.FilesMatchTotal, fileMatchExpression, pathToAssets))
+		Ui.Error(fmt.Sprintf("%v", err))
 		os.Exit(1)
 	}
 
 	if renv.OccurrencesTotal == 0 {
-		c.UI.Warn(ui.WrapAtLength(fmt.Sprintf("No reactenv environment variables were found in any of the %d '%s' files within '%s', therefore nothing was injected.\n", renv.FilesMatchTotal, fileMatchExpression, pathToAssets), 0))
-		c.UI.Warn(ui.WrapAtLength("Possible causes:", 4))
-		c.UI.Warn(ui.WrapAtLength("  - reactenv has already ran on these files", 4))
-		c.UI.Warn(ui.WrapAtLength("  - Environment variables were not replaced with `__reactenv.<name>` during build", 4))
-		c.UI.Warn("")
-		duration.In(c.UI.WarnColor, "")
+		Ui.Warn(ui.WrapAtLength(fmt.Sprintf("No reactenv environment variables were found in any of the %d '%s' files within '%s', therefore nothing was injected.\n", renv.FilesMatchTotal, fileMatchExpression, pathToAssets), 0))
+		Ui.Warn(ui.WrapAtLength("Possible causes:", 4))
+		Ui.Warn(ui.WrapAtLength("  - reactenv has already ran on these files", 4))
+		Ui.Warn(ui.WrapAtLength("  - Environment variables were not replaced with `__reactenv.<name>` during build", 4))
+		Ui.Warn("")
+		duration.In(Ui.WarnColor, "")
 		return 1
 	}
 
-	c.UI.Output(
+	Ui.Output(
 		fmt.Sprintf(
 			"Found %d reactenv environment %s in %d/%d matching files:",
 			renv.OccurrencesTotal,
@@ -128,7 +130,7 @@ func (c *RunCommand) Run(args []string) int {
 		),
 	)
 	for fileIndex, fileOccurrencesTotal := range renv.OccurrencesByFile {
-		c.UI.Output(
+		Ui.Output(
 			fmt.Sprintf(
 				"  - %4dx in %s",
 				len(fileOccurrencesTotal.Occurrences),
@@ -136,9 +138,9 @@ func (c *RunCommand) Run(args []string) int {
 			),
 		)
 	}
-	c.UI.Output("")
+	Ui.Output("")
 
-	c.UI.Output(fmt.Sprintf("Environment %s checklist (ticked if value has been set):", ui.Pluralize("variable", renv.OccurrencesTotal)))
+	Ui.Output(fmt.Sprintf("Environment %s checklist (ticked if value has been set):", ui.Pluralize("variable", renv.OccurrencesTotal)))
 	envValuesMissing := 0
 	for occurrenceKey := range renv.OccurrenceKeys {
 		check := "✅"
@@ -146,22 +148,22 @@ func (c *RunCommand) Run(args []string) int {
 			check = "❌"
 			envValuesMissing++
 		}
-		c.UI.Output(fmt.Sprintf("  - %4s %s", check, occurrenceKey))
+		Ui.Output(fmt.Sprintf("  - %4s %s", check, occurrenceKey))
 	}
-	c.UI.Output("")
+	Ui.Output("")
 
 	if envValuesMissing > 0 {
-		c.UI.Error(fmt.Sprintf("Environment %s not set. See above checklist for missing values.", ui.Pluralize("variable", envValuesMissing)))
+		Ui.Error(fmt.Sprintf("Environment %s not set. See above checklist for missing values.", ui.Pluralize("variable", envValuesMissing)))
 		os.Exit(1)
 	}
 
 	renv.ReplaceOccurrences()
 
-	duration.In(c.UI.SuccessColor, fmt.Sprintf("Injected all environment variables"))
+	duration.In(Ui.SuccessColor, fmt.Sprintf("Injected all environment variables"))
 	return 0
 }
 
 func (c *RunCommand) exitWithHelp() {
-	c.UI.Output("\nSee 'reactenv run --help'.")
+	Ui.Output("\nSee 'reactenv run --help'.")
 	os.Exit(1)
 }
