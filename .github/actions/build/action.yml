@@ -1,0 +1,13 @@
+name: Build
+description: Build release binaries
+
+runs:
+  using: "composite"
+  steps:
+    - name: Build release binaries
+      shell: bash
+      run: |
+        mage -v build:release
+        mage -v release:prep
+        find bin -type f -printf "%p %k KB\n"
+        find dist -type f -printf "%p %k KB\n"

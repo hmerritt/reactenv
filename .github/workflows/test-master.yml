@@ -22,3 +22,6 @@ jobs:
 
       - name: Send coverage
         uses: ./.github/actions/coverage
+
+      - name: Build release binaries
+        uses: ./.github/actions/build

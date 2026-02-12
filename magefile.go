@@ -18,6 +18,7 @@ import (
 )
 
 type Build mg.Namespace
+type Release mg.Namespace
 type Npm mg.Namespace
 
 var Aliases = map[string]interface{}{
@@ -78,11 +79,17 @@ func Bench() error {
 func (Build) Clean() error {
 	log := NewLogger()
 	defer log.End()
-	log.Info("cleaning bin directory")
+	log.Info("cleaning bin and dist directories")
 
 	if err := os.RemoveAll("bin"); err != nil {
 		return log.Error(err)
 	}
+
+	if err := os.RemoveAll("dist"); err != nil {
+		return log.Error(err)
+	}
+
+	log.Info("cleaning npm directories")
 
 	return fs.WalkDir(os.DirFS("npm"), ".", func(filePath string, d fs.DirEntry, err error) error {
 		if d.IsDir() ||
@@ -105,7 +112,7 @@ func (Build) Debug() error {
 }
 
 func (Build) Release() error {
-	mg.Deps(Build.Clean, BumpVersion)
+	mg.Deps(Build.Clean)
 
 	log := NewLogger()
 	defer log.End()
@@ -130,7 +137,12 @@ func (Build) Release() error {
 // Release
 // ----------------------------------------------------------------------------
 
-func Release() error {
+// Prep for release
+//
+// - Copy each binary to `npm` directories
+//
+// - Zip up binaries, then copy zips to `dist` directory
+func (Release) Prep() error {
 	log := NewLogger()
 	defer log.End()
 
@@ -208,6 +220,75 @@ func Release() error {
 		if releaseArchsNpmDirectories[archIndex] != "" {
 			log.Debug(archLog, "copy binary into npm directory")
 			CopyFile(binFilePath, path.Join("npm", releaseArchsNpmDirectories[archIndex], path.Base(binFilePath)))
+		}
+	}
+
+	// Copy zips to dist directory
+	log.Debug("copying release zips to dist directory")
+	if err := os.MkdirAll("dist", 0755); err != nil {
+		return log.Error("failed to create dist directory:", err)
+	}
+	for _, arch := range releaseArchs {
+		zipFilePath := fmt.Sprintf("bin/%s_%s_%s.zip", BINARY_FILENAME, releaseVersion, arch)
+		CopyFile(zipFilePath, path.Join("dist", path.Base(zipFilePath)))
+	}
+
+	return nil
+}
+
+// Upload all files in a directory to an FTP server (configurable). Used to upload
+// all release zips in `dist`.
+//
+// A new directory is created on the FTP server for the release version,
+// and the release files (everything in `LOCAL_PATH` directory) are uploaded to it.
+func (Release) FTP() error {
+	log := NewLogger()
+	defer log.End()
+
+	ftpHost := os.Getenv("FTP_HOST")
+	ftpUsername := os.Getenv("FTP_USERNAME")
+	ftpPassword := os.Getenv("FTP_PASSWORD")
+	ftpPath := os.Getenv("FTP_PATH")
+	localPath := os.Getenv("LOCAL_PATH")
+	releaseVersion := os.Getenv("RELEASE_VERSION")
+	ftpReleasePath := path.Join(ftpPath, releaseVersion)
+
+	log.Info("ftp upload path: ", ftpReleasePath)
+
+	if ftpHost == "" || ftpUsername == "" || ftpPassword == "" || ftpPath == "" || localPath == "" || releaseVersion == "" {
+		return log.Error("required FTP environment variables not set")
+	}
+
+	err := FTPUploadDir(ftpHost, ftpUsername, ftpPassword, ftpReleasePath, localPath, releaseVersion)
+	if err != nil {
+		return log.Error("failed to upload release files to FTP server:", err)
+	}
+
+	return nil
+}
+
+// Runs `npm publish` for each npm package.
+func (Release) NPM() error {
+	log := NewLogger()
+	defer log.End()
+
+	// Read all npm directories
+	npmDirectories, err := fs.ReadDir(os.DirFS("npm"), ".")
+	if err != nil {
+		return log.Error("failed to read npm directories:", err)
+	}
+
+	// Run `npm publish` for each npm package
+	for _, dir := range npmDirectories {
+		if !dir.IsDir() || !strings.HasPrefix(dir.Name(), "reactenv") {
+			continue
+		}
+
+		packagePath := path.Join("npm", dir.Name())
+		log.Info("publishing npm package: ", packagePath)
+
+		if err := RunStream([]string{"npm", "publish"}, packagePath, false); err != nil {
+			return log.Error("failed to publish npm package:", packagePath, err)
 		}
 	}
 

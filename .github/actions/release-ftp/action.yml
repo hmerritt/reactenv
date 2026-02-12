@@ -1,0 +1,37 @@
+name: "Upload Release to FTP"
+description: "Uploads all release ZIPs to an FTP server"
+
+inputs:
+    ftp_host:
+        description: "FTP server hostname or IP address"
+        required: true
+    ftp_username:
+        description: "FTP username"
+        required: true
+    ftp_password:
+        description: "FTP password"
+        required: true
+    ftp_path:
+        description: "FTP remote directory path"
+        required: true
+    local_path:
+        description: "Local directory path containing release binaries"
+        required: true
+    release_version:
+        description: "Version number for release. For example: 1.2.123"
+        required: true
+
+runs:
+    using: "composite"
+    steps:
+        - name: Upload release ZIPs to FTP server
+          shell: bash
+          run: |
+              mage -v release:ftp
+          env:
+              FTP_HOST: ${{ inputs.ftp_host }}
+              FTP_USERNAME: ${{ inputs.ftp_username }}
+              FTP_PASSWORD: ${{ inputs.ftp_password }}
+              FTP_PATH: ${{ inputs.ftp_path }}
+              LOCAL_PATH: ${{ inputs.local_path }}
+              RELEASE_VERSION: ${{ inputs.release_version }}

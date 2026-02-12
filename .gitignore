@@ -2,7 +2,8 @@
 .yarn/
 .idea/
 .vagrant/
-bin/**/*
+bin/
+dist/
 target/
 node_modules/
 
@@ -11,6 +12,8 @@ node_modules/
 *.log
 *.tar
 *.tar.gz
+
+cover.out
 
 !npm/reactenv/bin/reactenv
 npm/reactenv-darwin-arm64/reactenv

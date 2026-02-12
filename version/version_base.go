@@ -1,5 +1,10 @@
 package version
 
+const (
+	AppName        = "reactenv"
+	BinaryFilename = "reactenv"
+)
+
 var (
 	// The git commit that was compiled. This will be filled in by the compiler.
 	GitCommit   string
@@ -9,7 +14,7 @@ var (
 	// The compilation date. This will be filled in by the compiler.
 	BuildDate string
 
-	Version           = "0.1.88"
+	Version           = "0.1.96"
 	VersionPrerelease = ""
 	VersionMetadata   = ""
 )
