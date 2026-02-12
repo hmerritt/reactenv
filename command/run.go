@@ -3,7 +3,6 @@ package command
 import (
 	"fmt"
 	"os"
-	"regexp"
 	"strings"
 
 	"github.com/hmerritt/reactenv/reactenv"
@@ -11,10 +10,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type RunCommand struct{}
+type RunCommand struct {
+	FileMatchPattern string
+}
+
+const defaultFileMatchPattern = `.*\.js$`
 
 func (c *RunCommand) Synopsis() string {
-	return "Inject environment variables into a built react app"
+	return "Inject environment variables into a bundled react app"
 }
 
 func (c *RunCommand) Help() string {
@@ -22,9 +25,18 @@ func (c *RunCommand) Help() string {
 	helpText := fmt.Sprintf(`
 Usage: reactenv run [options] PATH
 
-Inject environment variables into a built react app.
+Inject environment variables into a built react app
 
-Example:
+Usage:
+  reactenv run PATH [flags]
+
+Flags:
+  -h, --help           help for run
+      --match string   File match pattern (regex or glob) (default ".*\\.js$")
+
+Examples:
+  $ reactenv run --match "glob:**/*.mjs" ./dist
+  $ reactenv run --match "regex:^assets/.*\\.js$" ./dist
   $ reactenv run ./dist
 
     dist/
@@ -59,6 +71,8 @@ func NewCommandRun() *cobra.Command {
 		Ui.Output(run.Help())
 	})
 
+	cmd.Flags().StringVar(&run.FileMatchPattern, "match", defaultFileMatchPattern, "File match pattern (regex or glob)")
+
 	return cmd
 }
 
@@ -72,46 +86,48 @@ func (c *RunCommand) Run(args []string) int {
 
 	pathToAssets := args[0]
 
+	fileMatchPattern := c.FileMatchPattern
+
 	if _, err := os.Stat(pathToAssets); os.IsNotExist(err) {
 		Ui.Error(fmt.Sprintf("File PATH '%s' does not exist.", pathToAssets))
 		c.exitWithHelp()
 	}
 
-	// @TODO: Add flag to specify matcher
-	fileMatchExpression := `.*\.js$`
-	_, err := regexp.Compile(fileMatchExpression)
-
-	if err != nil {
-		Ui.Error(fmt.Sprintf("File match expression '%s' is not valid.\n", fileMatchExpression))
-		Ui.Error(fmt.Sprintf("%v", err))
-		c.exitWithHelp()
-	}
-
 	renv := reactenv.NewReactenv(Ui)
 
-	err = renv.FindFiles(pathToAssets, fileMatchExpression)
+	err := renv.FindFiles(pathToAssets, fileMatchPattern)
 
 	if err != nil {
+		if matchErr, ok := err.(*reactenv.FileMatchError); ok {
+			Ui.Error(fmt.Sprintf("File match pattern '%s' is not valid.", matchErr.Pattern))
+			if matchErr.AutoRegexErr != nil {
+				Ui.Error(fmt.Sprintf("Regex error: %v", matchErr.AutoRegexErr))
+				Ui.Error(fmt.Sprintf("Glob error: %v", matchErr.Err))
+			} else {
+				Ui.Error(fmt.Sprintf("%v", matchErr.Err))
+			}
+			c.exitWithHelp()
+		}
 		Ui.Error(fmt.Sprintf("Error reading files in PATH '%s'.\n", pathToAssets))
 		Ui.Error(fmt.Sprintf("%v", err))
 		os.Exit(1)
 	}
 
 	if len(renv.Files) == 0 {
-		Ui.Error(fmt.Sprintf("No files found in path '%s' using matcher '%s'", pathToAssets, fileMatchExpression))
+		Ui.Error(fmt.Sprintf("No files found in path '%s' using matcher '%s'", pathToAssets, fileMatchPattern))
 		os.Exit(1)
 	}
 
 	err = renv.FindOccurrences()
 
 	if err != nil {
-		Ui.Error(fmt.Sprintf("There was an error while searching for __reactenv variables in the %d '%s' files within '%s', therefore nothing was injected.\n", renv.FilesMatchTotal, fileMatchExpression, pathToAssets))
+		Ui.Error(fmt.Sprintf("There was an error while searching for __reactenv variables in the %d '%s' files within '%s', therefore nothing was injected.\n", renv.FilesMatchTotal, fileMatchPattern, pathToAssets))
 		Ui.Error(fmt.Sprintf("%v", err))
 		os.Exit(1)
 	}
 
 	if renv.OccurrencesTotal == 0 {
-		Ui.Warn(ui.WrapAtLength(fmt.Sprintf("No reactenv environment variables were found in any of the %d '%s' files within '%s', therefore nothing was injected.\n", renv.FilesMatchTotal, fileMatchExpression, pathToAssets), 0))
+		Ui.Warn(ui.WrapAtLength(fmt.Sprintf("No reactenv environment variables were found in any of the %d '%s' files within '%s', therefore nothing was injected.\n", renv.FilesMatchTotal, fileMatchPattern, pathToAssets), 0))
 		Ui.Warn(ui.WrapAtLength("Possible causes:", 4))
 		Ui.Warn(ui.WrapAtLength("  - reactenv has already ran on these files", 4))
 		Ui.Warn(ui.WrapAtLength("  - Environment variables were not replaced with `__reactenv.<name>` during build", 4))

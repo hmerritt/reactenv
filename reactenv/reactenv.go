@@ -11,12 +11,36 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/bmatcuk/doublestar/v4"
 	"github.com/hmerritt/reactenv/ui"
 )
 
 const (
 	REACTENV_PREFIX = "__reactenv"
 )
+
+const (
+	fileMatchModeAuto  = "auto"
+	fileMatchModeRegex = "regex"
+	fileMatchModeGlob  = "glob"
+)
+
+type FileMatchError struct {
+	Pattern      string
+	Mode         string
+	Err          error
+	AutoRegexErr error
+}
+
+func (e *FileMatchError) Error() string {
+	if e == nil {
+		return ""
+	}
+	if e.Mode == fileMatchModeAuto && e.AutoRegexErr != nil {
+		return fmt.Sprintf("file match pattern '%s' is not valid as regex or glob: regex error: %v; glob error: %v", e.Pattern, e.AutoRegexErr, e.Err)
+	}
+	return fmt.Sprintf("file match pattern '%s' is not valid for %s: %v", e.Pattern, e.Mode, e.Err)
+}
 
 type Reactenv struct {
 	UI *ui.Ui
@@ -64,14 +88,14 @@ func NewReactenv(ui *ui.Ui) *Reactenv {
 	}
 }
 
-// Populates `Reactenv.Files` with all files that match `fileMatchExpression`
+// Populates `Reactenv.Files` with all files that match `fileMatchExpression`.
+// Patterns support regex or glob (auto-detected, with optional "regex:" / "glob:" prefixes).
 func (r *Reactenv) FindFiles(dir string, fileMatchExpression string) error {
 	r.Dir = dir
 	r.Files = make([]*fs.DirEntry, 0)
 	r.FileRelPaths = make([]string, 0)
 
-	fileMatcher, err := regexp.Compile(fileMatchExpression)
-
+	fileMatcher, _, err := buildFileMatcher(fileMatchExpression)
 	if err != nil {
 		return err
 	}
@@ -97,13 +121,13 @@ func (r *Reactenv) FindFiles(dir string, fileMatchExpression string) error {
 			return nil
 		}
 
-		if fileMatcher.MatchString(entry.Name()) {
-			relPath, err := filepath.Rel(r.Dir, walkPath)
-			if err != nil {
-				relPath = entry.Name()
-			}
-			relPath = filepath.ToSlash(relPath)
+		relPath, err := filepath.Rel(r.Dir, walkPath)
+		if err != nil {
+			relPath = entry.Name()
+		}
+		relPath = filepath.ToSlash(relPath)
 
+		if fileMatcher(relPath) {
 			matches = append(matches, fileMatch{
 				entry:   entry,
 				relPath: relPath,
@@ -132,6 +156,81 @@ func (r *Reactenv) FindFiles(dir string, fileMatchExpression string) error {
 	r.FilesMatchTotal = len(matches)
 
 	return nil
+}
+
+func buildFileMatcher(pattern string) (func(string) bool, string, error) {
+	rawPattern := pattern
+	mode := fileMatchModeAuto
+
+	if strings.HasPrefix(pattern, "regex:") {
+		mode = fileMatchModeRegex
+		pattern = strings.TrimPrefix(pattern, "regex:")
+	} else if strings.HasPrefix(pattern, "glob:") {
+		mode = fileMatchModeGlob
+		pattern = strings.TrimPrefix(pattern, "glob:")
+	}
+
+	switch mode {
+	case fileMatchModeRegex:
+		matcher, err := buildRegexMatcher(rawPattern, pattern)
+		if err != nil {
+			return nil, mode, err
+		}
+		return matcher, mode, nil
+	case fileMatchModeGlob:
+		matcher, err := buildGlobMatcher(rawPattern, pattern)
+		if err != nil {
+			return nil, mode, err
+		}
+		return matcher, mode, nil
+	default:
+		matcher, err := buildRegexMatcher(rawPattern, pattern)
+		if err == nil {
+			return matcher, fileMatchModeRegex, nil
+		}
+
+		globMatcher, globErr := buildGlobMatcher(rawPattern, pattern)
+		if globErr == nil {
+			return globMatcher, fileMatchModeGlob, nil
+		}
+
+		return nil, fileMatchModeAuto, &FileMatchError{
+			Pattern:      rawPattern,
+			Mode:         fileMatchModeAuto,
+			Err:          globErr,
+			AutoRegexErr: err,
+		}
+	}
+}
+
+func buildRegexMatcher(rawPattern string, pattern string) (func(string) bool, error) {
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, &FileMatchError{
+			Pattern: rawPattern,
+			Mode:    fileMatchModeRegex,
+			Err:     err,
+		}
+	}
+
+	return func(relPath string) bool {
+		return re.MatchString(relPath)
+	}, nil
+}
+
+func buildGlobMatcher(rawPattern string, pattern string) (func(string) bool, error) {
+	if _, err := doublestar.Match(pattern, ""); err != nil {
+		return nil, &FileMatchError{
+			Pattern: rawPattern,
+			Mode:    fileMatchModeGlob,
+			Err:     err,
+		}
+	}
+
+	return func(relPath string) bool {
+		match, err := doublestar.Match(pattern, relPath)
+		return err == nil && match
+	}, nil
 }
 
 // Run a callback for each File

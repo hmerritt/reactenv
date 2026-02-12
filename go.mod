@@ -4,6 +4,7 @@ go 1.25.7
 
 require (
 	github.com/briandowns/spinner v1.23.2
+	github.com/bmatcuk/doublestar/v4 v4.10.0
 	github.com/fatih/color v1.18.0
 	github.com/magefile/mage v1.15.0
 	github.com/mitchellh/cli v1.1.5

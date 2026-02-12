@@ -77,6 +77,65 @@ func TestReactenvFindFilesMatchesFilesRecursively(t *testing.T) {
 	require.Equal(t, expected, renv.FileRelPaths, "matched relative paths")
 }
 
+func TestReactenvFindFilesAutoFallsBackToGlob(t *testing.T) {
+	tempDir := t.TempDir()
+
+	nestedDir := filepath.Join(tempDir, "nested")
+	require.NoError(t, os.Mkdir(nestedDir, 0755), "create nested dir")
+	writeTestFile(t, nestedDir, "nested.js")
+
+	renv := NewReactenv(nil)
+
+	require.NoError(t, renv.FindFiles(tempDir, "**/*.js"), "FindFiles returned error")
+	require.Equal(t, 1, renv.FilesMatchTotal, "FilesMatchTotal")
+
+	expected := []string{
+		"nested/nested.js",
+	}
+
+	require.Equal(t, expected, renv.FileRelPaths, "matched relative paths")
+}
+
+func TestReactenvFindFilesRegexMatchesRelativePath(t *testing.T) {
+	tempDir := t.TempDir()
+
+	writeTestFile(t, tempDir, "root.js")
+
+	nestedDir := filepath.Join(tempDir, "nested")
+	require.NoError(t, os.Mkdir(nestedDir, 0755), "create nested dir")
+	writeTestFile(t, nestedDir, "nested.js")
+
+	renv := NewReactenv(nil)
+
+	require.NoError(t, renv.FindFiles(tempDir, `^nested/.*\.js$`), "FindFiles returned error")
+	require.Equal(t, 1, renv.FilesMatchTotal, "FilesMatchTotal")
+
+	expected := []string{
+		"nested/nested.js",
+	}
+
+	require.Equal(t, expected, renv.FileRelPaths, "matched relative paths")
+}
+
+func TestReactenvFindFilesSupportsGlobPrefix(t *testing.T) {
+	tempDir := t.TempDir()
+
+	nestedDir := filepath.Join(tempDir, "nested")
+	require.NoError(t, os.Mkdir(nestedDir, 0755), "create nested dir")
+	writeTestFile(t, nestedDir, "nested.js")
+
+	renv := NewReactenv(nil)
+
+	require.NoError(t, renv.FindFiles(tempDir, "glob:**/*.js"), "FindFiles returned error")
+	require.Equal(t, 1, renv.FilesMatchTotal, "FilesMatchTotal")
+
+	expected := []string{
+		"nested/nested.js",
+	}
+
+	require.Equal(t, expected, renv.FileRelPaths, "matched relative paths")
+}
+
 func TestReactenvFindFilesSkipsNodeModules(t *testing.T) {
 	tempDir := t.TempDir()
 
@@ -138,7 +197,14 @@ func TestReactenvFindFilesReturnsErrorForBadRegex(t *testing.T) {
 	renv := NewReactenv(nil)
 	tempDir := t.TempDir()
 
-	require.Error(t, renv.FindFiles(tempDir, `[`), "expected error for invalid regex")
+	err := renv.FindFiles(tempDir, `[`)
+	require.Error(t, err, "expected error for invalid matcher")
+
+	var matchErr *FileMatchError
+	require.ErrorAs(t, err, &matchErr)
+	require.Equal(t, fileMatchModeAuto, matchErr.Mode)
+	require.NotNil(t, matchErr.AutoRegexErr)
+	require.NotNil(t, matchErr.Err)
 }
 
 func TestReactenvFilesWalkCallsCallbackInOrder(t *testing.T) {
