@@ -71,7 +71,9 @@ All you need to do is run `reactenv run <path-to-js-files>` and it will do it's 
 ```sh
 # Inject environment variables into all `.js` files in `dist` directory (recursively)
 $ reactenv run dist
+```
 
+```sh
 # Override the file matcher (regex or glob, matching relative paths)
 $ reactenv run --match "glob:**/*.mjs" dist
 $ reactenv run --match "regex:^assets/.*\\.js$" dist
