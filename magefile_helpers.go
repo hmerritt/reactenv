@@ -11,18 +11,25 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path"
 	"runtime"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/hmerritt/reactenv/version"
+	"github.com/pkg/sftp"
+	"golang.org/x/crypto/ssh"
 
 	"github.com/fatih/color"
 	"github.com/magefile/mage/sh"
 )
 
 const (
-	MODULE_NAME = "hmerritt/reactenv" // go.mod module name
-	LOG_LEVEL   = 4                   // 5 = debug, 4 = info, 3 = warn, 2 = error
+	APP_NAME        = version.AppName
+	BINARY_FILENAME = version.BinaryFilename
+	MODULE_NAME     = "hmerritt/reactenv" // go.mod module name
+	LOG_LEVEL       = 4                   // 5 = debug, 4 = info, 3 = warn, 2 = error
 )
 
 // ----------------------------------------------------------------------------
@@ -283,6 +290,14 @@ func GitBranch() string {
 // MISC
 // ----------------------------------------------------------------------------
 
+// Returns the filename of the application binary, based on the current OS.
+func BinaryFilenameForCurrentOS(filename string) string {
+	if runtime.GOOS == "windows" {
+		return fmt.Sprintf("%s.exe", filename)
+	}
+	return filename
+}
+
 // Checks if an executable exists in PATH
 func ExecExists(e string) bool {
 	_, err := exec.LookPath(e)
@@ -351,6 +366,82 @@ func ZipFiles(zipPath string, files ...string) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+// Upload all files in a directory to a FTP server
+func FTPUploadDir(host, username, password, remotePath, localPath, releaseVersion string) error {
+	log := NewLogger()
+	defer log.End()
+
+	if host == "" || username == "" || password == "" || remotePath == "" || localPath == "" || releaseVersion == "" {
+		return errors.New("required FTP environment variables not set")
+	}
+
+	config := &ssh.ClientConfig{
+		User: username,
+		Auth: []ssh.AuthMethod{
+			ssh.Password(password),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	conn, err := ssh.Dial("tcp", fmt.Sprintf("%s:%s", host, "22"), config)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	client, err := sftp.NewClient(conn)
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+
+	err = client.Mkdir(remotePath)
+	if err != nil && !os.IsExist(err) {
+		// If the directory already exists, ignore the error
+		return err
+	}
+
+	localDir, err := os.Open(localPath)
+	if err != nil {
+		return err
+	}
+	defer localDir.Close()
+
+	files, err := localDir.Readdir(-1)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		localFilePath := path.Join(localPath, file.Name())
+		remoteFilePath := path.Join(remotePath, file.Name())
+
+		localFile, err := os.Open(localFilePath)
+		if err != nil {
+			return err
+		}
+		defer localFile.Close()
+
+		remoteFile, err := client.Create(remoteFilePath)
+		if err != nil {
+			return err
+		}
+		defer remoteFile.Close()
+
+		_, err = remoteFile.ReadFrom(localFile)
+		if err != nil {
+			return err
+		}
+
 	}
 
 	return nil

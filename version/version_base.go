@@ -1,5 +1,10 @@
 package version
 
+const (
+	AppName        = "reactenv"
+	BinaryFilename = "reactenv"
+)
+
 var (
 	// The git commit that was compiled. This will be filled in by the compiler.
 	GitCommit   string
