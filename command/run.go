@@ -76,7 +76,7 @@ func (c *RunCommand) Run(args []string) int {
 	}
 
 	// @TODO: Add flag to specify matcher
-	fileMatchExpression := `.*\.js`
+	fileMatchExpression := `.*\.js$`
 	_, err := regexp.Compile(fileMatchExpression)
 
 	if err != nil {
