@@ -19,3 +19,6 @@ jobs:
 
       - name: Run Tests
         uses: ./.github/actions/test
+
+      - name: Build release binaries
+        uses: ./.github/actions/build

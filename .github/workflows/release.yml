@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Run Tests
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Go Setup
+        uses: ./.github/actions/go-setup
+
+      - name: Run Tests
+        uses: ./.github/actions/test
+
+  release:
+    needs: test
+    runs-on: ubuntu-latest
+    name: Build release binaries
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Go Setup
+        uses: ./.github/actions/go-setup
+
+      - name: Build release binaries
+        uses: ./.github/actions/build
+
+      - name: Release to GitHub via tagged-release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: v${{ github.ref_name }}
+          draft: true
+          prerelease: false
+          files: |
+            ./dist/reactenv_${{ github.ref_name }}_darwin_amd64.zip
+            ./dist/reactenv_${{ github.ref_name }}_darwin_arm64.zip
+            ./dist/reactenv_${{ github.ref_name }}_freebsd_amd64.zip
+            ./dist/reactenv_${{ github.ref_name }}_freebsd_arm.zip
+            ./dist/reactenv_${{ github.ref_name }}_linux_amd64.zip
+            ./dist/reactenv_${{ github.ref_name }}_linux_arm64.zip
+            ./dist/reactenv_${{ github.ref_name }}_netbsd_amd64.zip
+            ./dist/reactenv_${{ github.ref_name }}_netbsd_arm.zip
+            ./dist/reactenv_${{ github.ref_name }}_openbsd_amd64.zip
+            ./dist/reactenv_${{ github.ref_name }}_windows_amd64.zip
+
+      - name: Release to FTP
+        uses: ./.github/actions/release-ftp
+        with:
+          ftp_host: ${{ secrets.FTP_HOST }}
+          ftp_username: ${{ secrets.FTP_USERNAME }}
+          ftp_password: ${{ secrets.FTP_PASSWORD }}
+          ftp_path: ${{ secrets.FTP_PATH }}
+          local_path: ./dist
+          release_version: ${{ github.ref_name }}
