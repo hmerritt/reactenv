@@ -32,7 +32,8 @@ func NewRootCommand() *cobra.Command {
 	rootCmd.Flags().BoolVar(&showVersion, "version", false, "Show version")
 
 	// Commands
-	rootCmd.AddCommand(NewRunCommand(uiInstance))
+	rootCmd.AddCommand(NewCommandRun(uiInstance))
+	rootCmd.AddCommand(NewCommandCompletion())
 
 	return rootCmd
 }

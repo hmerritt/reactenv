@@ -39,7 +39,7 @@ Example:
 	return strings.TrimSpace(helpText)
 }
 
-func NewRunCommand(ui *ui.Ui) *cobra.Command {
+func NewCommandRun(ui *ui.Ui) *cobra.Command {
 	run := &RunCommand{
 		UI: ui,
 	}
