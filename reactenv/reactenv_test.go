@@ -40,6 +40,7 @@ func TestReactenvFindFilesMatchesFilesAndIgnoresDirs(t *testing.T) {
 	require.Equal(t, 2, renv.FilesMatchTotal, "FilesMatchTotal")
 
 	require.Len(t, renv.Files, 2, "Files length")
+	require.Len(t, renv.FileRelPaths, 2, "FileRelPaths length")
 
 	found := map[string]bool{}
 	for _, file := range renv.Files {
@@ -52,6 +53,77 @@ func TestReactenvFindFilesMatchesFilesAndIgnoresDirs(t *testing.T) {
 	}
 
 	require.Equal(t, expected, found, "matched files")
+
+	relFound := map[string]bool{}
+	for _, relPath := range renv.FileRelPaths {
+		relFound[relPath] = true
+	}
+
+	require.Equal(t, expected, relFound, "matched relative paths")
+}
+
+func TestReactenvFindFilesMatchesFilesRecursively(t *testing.T) {
+	tempDir := t.TempDir()
+
+	writeTestFile(t, tempDir, "root.js")
+
+	nestedDir := filepath.Join(tempDir, "nested")
+	require.NoError(t, os.Mkdir(nestedDir, 0755), "create nested dir")
+	writeTestFile(t, nestedDir, "nested.js")
+
+	deepDir := filepath.Join(nestedDir, "deep")
+	require.NoError(t, os.Mkdir(deepDir, 0755), "create deep dir")
+	writeTestFile(t, deepDir, "deep.js")
+
+	renv := NewReactenv(nil)
+
+	require.NoError(t, renv.FindFiles(tempDir, `.*\.js$`), "FindFiles returned error")
+	require.Equal(t, 3, renv.FilesMatchTotal, "FilesMatchTotal")
+	require.Len(t, renv.Files, 3, "Files length")
+	require.Len(t, renv.FileRelPaths, 3, "FileRelPaths length")
+
+	expected := map[string]bool{
+		"root.js":             true,
+		"nested/nested.js":    true,
+		"nested/deep/deep.js": true,
+	}
+
+	found := map[string]bool{}
+	for _, relPath := range renv.FileRelPaths {
+		found[relPath] = true
+	}
+
+	require.Equal(t, expected, found, "matched relative paths")
+}
+
+func TestReactenvFindFilesSkipsNodeModules(t *testing.T) {
+	tempDir := t.TempDir()
+
+	writeTestFile(t, tempDir, "root.js")
+
+	nodeModulesDir := filepath.Join(tempDir, "node_modules")
+	require.NoError(t, os.Mkdir(nodeModulesDir, 0755), "create node_modules dir")
+	writeTestFile(t, nodeModulesDir, "ignored.js")
+
+	nestedDir := filepath.Join(tempDir, "nested")
+	require.NoError(t, os.Mkdir(nestedDir, 0755), "create nested dir")
+	writeTestFile(t, nestedDir, "nested.js")
+
+	renv := NewReactenv(nil)
+
+	require.NoError(t, renv.FindFiles(tempDir, `.*\.js$`), "FindFiles returned error")
+
+	expected := map[string]bool{
+		"root.js":          true,
+		"nested/nested.js": true,
+	}
+
+	found := map[string]bool{}
+	for _, relPath := range renv.FileRelPaths {
+		found[relPath] = true
+	}
+
+	require.Equal(t, expected, found, "matched relative paths")
 }
 
 func TestReactenvFindFilesReturnsErrorForMissingDir(t *testing.T) {
@@ -426,6 +498,7 @@ func TestReactenvFindOccurrencesFiltersFilesWithoutMatches(t *testing.T) {
 
 	require.Equal(t, 3, renv.OccurrencesTotal)
 	require.Len(t, renv.Files, 2)
+	require.Len(t, renv.FileRelPaths, 2)
 	require.Len(t, renv.OccurrencesByFile, 2)
 
 	counts := map[string]int{}
@@ -437,6 +510,13 @@ func TestReactenvFindOccurrencesFiltersFilesWithoutMatches(t *testing.T) {
 		"a.js": 1,
 		"c.js": 2,
 	}, counts)
+
+	paths := map[string]bool{}
+	for _, relPath := range renv.FileRelPaths {
+		paths[relPath] = true
+	}
+
+	require.Equal(t, map[string]bool{"a.js": true, "c.js": true}, paths)
 
 	expectedKeys := map[string]bool{
 		"A": true,
@@ -463,6 +543,7 @@ func TestReactenvFindOccurrencesNoMatchesClearsFiles(t *testing.T) {
 
 	require.Equal(t, 0, renv.OccurrencesTotal)
 	require.Empty(t, renv.Files)
+	require.Empty(t, renv.FileRelPaths)
 	require.Empty(t, renv.OccurrencesByFile)
 	require.Empty(t, renv.OccurrenceKeys)
 	require.Empty(t, renv.OccurrenceKeysReplacement)
@@ -484,6 +565,7 @@ func TestReactenvFindOccurrencesResetsStateOnRepeat(t *testing.T) {
 	require.Equal(t, map[string]bool{"ONE": true}, renv.OccurrenceKeys)
 	require.Equal(t, map[string]string{"ONE": "1"}, renv.OccurrenceKeysReplacement)
 	require.Len(t, renv.Files, 1)
+	require.Len(t, renv.FileRelPaths, 1)
 	require.Len(t, renv.OccurrencesByFile, 1)
 
 	require.NoError(t, os.WriteFile(filePath, []byte("no occurrences"), 0644))
@@ -492,6 +574,7 @@ func TestReactenvFindOccurrencesResetsStateOnRepeat(t *testing.T) {
 
 	require.Equal(t, 0, renv.OccurrencesTotal)
 	require.Empty(t, renv.Files)
+	require.Empty(t, renv.FileRelPaths)
 	require.Empty(t, renv.OccurrencesByFile)
 	require.Empty(t, renv.OccurrenceKeys)
 	require.Empty(t, renv.OccurrenceKeysReplacement)

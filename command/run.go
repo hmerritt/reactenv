@@ -33,7 +33,7 @@ Example:
     ├── index.css
     ├── index-csxw0qbp%s
     ├── login.lazy-b839zm%s
-    └── user.lazy-c7942lh%s  <- Runs on all %s files in PATH
+    └── user.lazy-c7942lh%s  <- Runs on all %s files in PATH (recursively)
 `, jsInfo, jsInfo, jsInfo, jsInfo)
 
 	return strings.TrimSpace(helpText)
@@ -132,7 +132,7 @@ func (c *RunCommand) Run(args []string) int {
 			fmt.Sprintf(
 				"  - %4dx in %s",
 				len(fileOccurrencesTotal.Occurrences),
-				(*renv.Files[fileIndex]).Name(),
+				renv.FileRelPaths[fileIndex],
 			),
 		)
 	}

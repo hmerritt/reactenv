@@ -69,7 +69,7 @@ It uses the current host enviroment variables and will replace all matches in th
 All you need to do is run `reactenv run <path-to-js-files>` and it will do it's thing:
 
 ```sh
-# Inject environment variables into all `.js` files in `dist` directory
+# Inject environment variables into all `.js` files in `dist` directory (recursively)
 $ reactenv run dist
 ```
 

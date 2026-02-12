@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -26,6 +27,8 @@ type Reactenv struct {
 	FilesMatchTotal int
 	// Files with occurrences (not every matched file will have an occurrence, so this may be less than `FilesMatchTotal`)
 	Files []*fs.DirEntry
+	// Relative paths (from Dir) for each file in Files.
+	FileRelPaths []string
 
 	// Total individual occurrences count
 	OccurrencesTotal int
@@ -52,6 +55,7 @@ func NewReactenv(ui *ui.Ui) *Reactenv {
 		UI:                        ui,
 		Dir:                       "",
 		Files:                     make([]*fs.DirEntry, 0),
+		FileRelPaths:              make([]string, 0),
 		OccurrencesTotal:          0,
 		OccurrencesByFile:         make([]*FileOccurrences, 0),
 		OccurrenceKeys:            make(OccurrenceKeys),
@@ -63,11 +67,7 @@ func NewReactenv(ui *ui.Ui) *Reactenv {
 func (r *Reactenv) FindFiles(dir string, fileMatchExpression string) error {
 	r.Dir = dir
 	r.Files = make([]*fs.DirEntry, 0)
-	files, err := os.ReadDir(r.Dir)
-
-	if err != nil {
-		return err
-	}
+	r.FileRelPaths = make([]string, 0)
 
 	fileMatcher, err := regexp.Compile(fileMatchExpression)
 
@@ -75,11 +75,37 @@ func (r *Reactenv) FindFiles(dir string, fileMatchExpression string) error {
 		return err
 	}
 
-	for _, file := range files {
-		if fileMatcher.MatchString(file.Name()) && !file.IsDir() {
-			fileEntry := file
-			r.Files = append(r.Files, &fileEntry)
+	err = filepath.WalkDir(r.Dir, func(walkPath string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
 		}
+
+		if entry.IsDir() {
+			// Prevent scanning of node_modules directory. If necessary, you can bypass this by
+			// pointing run reactenv to the node_modules directory directly (e.g. `reactenv run node_modules`).
+			if entry.Name() == "node_modules" && walkPath != r.Dir {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		if fileMatcher.MatchString(entry.Name()) {
+			relPath, err := filepath.Rel(r.Dir, walkPath)
+			if err != nil {
+				relPath = entry.Name()
+			}
+			relPath = filepath.ToSlash(relPath)
+
+			fileEntry := entry
+			r.Files = append(r.Files, &fileEntry)
+			r.FileRelPaths = append(r.FileRelPaths, relPath)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return err
 	}
 
 	r.FilesMatchTotal = len(r.Files)
@@ -90,7 +116,7 @@ func (r *Reactenv) FindFiles(dir string, fileMatchExpression string) error {
 // Run a callback for each File
 func (r *Reactenv) FilesWalk(fileCb func(fileIndex int, file fs.DirEntry, filePath string) error) error {
 	for fileIndex, file := range r.Files {
-		filePath := path.Join(r.Dir, (*file).Name())
+		filePath := path.Join(r.Dir, r.FileRelPaths[fileIndex])
 		err := fileCb(fileIndex, *file, filePath)
 		if err != nil {
 			return err
@@ -103,7 +129,7 @@ func (r *Reactenv) FilesWalk(fileCb func(fileIndex int, file fs.DirEntry, filePa
 // Run a callback for each File, passing in the file contents
 func (r *Reactenv) FilesWalkContents(fileCb func(fileIndex int, file fs.DirEntry, filePath string, fileContents []byte) error) error {
 	for fileIndex, file := range r.Files {
-		filePath := path.Join(r.Dir, (*file).Name())
+		filePath := path.Join(r.Dir, r.FileRelPaths[fileIndex])
 		fileContents, err := os.ReadFile(filePath)
 
 		if err != nil {
@@ -204,6 +230,7 @@ func (r *Reactenv) FindOccurrences() error {
 
 	// Prep for removing files with no occurrences
 	newFiles := make([]*fs.DirEntry, 0, len(r.Files))
+	newFileRelPaths := make([]string, 0, len(r.Files))
 	newOccurrencesByFile := make([]*FileOccurrences, 0)
 	fileIndexesToRemove := make(map[int]int, 0)
 
@@ -219,7 +246,7 @@ func (r *Reactenv) FindOccurrences() error {
 
 		for _, occurrence := range fileOccurrences {
 			occurrenceText := string(fileContents[occurrence[0]:occurrence[1]])
-			envName := strings.Replace(occurrenceText, "__reactenv.", "", 1)
+			envName := strings.Replace(occurrenceText, string(prefix), "", 1)
 			envValue, envExists := os.LookupEnv(envName)
 
 			r.OccurrencesByFile[fileIndex].Occurrences = append(r.OccurrencesByFile[fileIndex].Occurrences, Occurrence{
@@ -250,11 +277,13 @@ func (r *Reactenv) FindOccurrences() error {
 		for fileIndex, file := range r.Files {
 			if _, ok := fileIndexesToRemove[fileIndex]; !ok {
 				newFiles = append(newFiles, file)
+				newFileRelPaths = append(newFileRelPaths, r.FileRelPaths[fileIndex])
 				newOccurrencesByFile = append(newOccurrencesByFile, r.OccurrencesByFile[fileIndex])
 			}
 		}
 
 		r.Files = newFiles
+		r.FileRelPaths = newFileRelPaths
 		r.OccurrencesByFile = newOccurrencesByFile
 	}
 
