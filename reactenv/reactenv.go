@@ -8,6 +8,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/hmerritt/reactenv/ui"
@@ -75,6 +76,13 @@ func (r *Reactenv) FindFiles(dir string, fileMatchExpression string) error {
 		return err
 	}
 
+	type fileMatch struct {
+		entry   fs.DirEntry
+		relPath string
+	}
+
+	matches := make([]fileMatch, 0)
+
 	err = filepath.WalkDir(r.Dir, func(walkPath string, entry fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
@@ -96,9 +104,10 @@ func (r *Reactenv) FindFiles(dir string, fileMatchExpression string) error {
 			}
 			relPath = filepath.ToSlash(relPath)
 
-			fileEntry := entry
-			r.Files = append(r.Files, &fileEntry)
-			r.FileRelPaths = append(r.FileRelPaths, relPath)
+			matches = append(matches, fileMatch{
+				entry:   entry,
+				relPath: relPath,
+			})
 		}
 
 		return nil
@@ -108,7 +117,19 @@ func (r *Reactenv) FindFiles(dir string, fileMatchExpression string) error {
 		return err
 	}
 
-	r.FilesMatchTotal = len(r.Files)
+	// Enforce deterministic sorting of matches
+	sort.Slice(matches, func(i, j int) bool {
+		return matches[i].relPath < matches[j].relPath
+	})
+
+	// Populate `Reactenv.Files` and `Reactenv.FileRelPaths` with sorted matches
+	for _, match := range matches {
+		fileEntry := match.entry
+		r.Files = append(r.Files, &fileEntry)
+		r.FileRelPaths = append(r.FileRelPaths, match.relPath)
+	}
+
+	r.FilesMatchTotal = len(matches)
 
 	return nil
 }
