@@ -8,10 +8,11 @@ import (
 
 	"github.com/hmerritt/reactenv/reactenv"
 	"github.com/hmerritt/reactenv/ui"
+	"github.com/spf13/cobra"
 )
 
 type RunCommand struct {
-	*BaseCommand
+	UI *ui.Ui
 }
 
 func (c *RunCommand) Synopsis() string {
@@ -38,14 +39,29 @@ Example:
 	return strings.TrimSpace(helpText)
 }
 
-func (c *RunCommand) Flags() *FlagMap {
-	return GetFlagMap(FlagNamesGlobal)
+func NewRunCommand(ui *ui.Ui) *cobra.Command {
+	run := &RunCommand{
+		UI: ui,
+	}
+
+	cmd := &cobra.Command{
+		Use:   "run PATH",
+		Short: run.Synopsis(),
+		Args:  cobra.ArbitraryArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			run.Run(args)
+		},
+	}
+
+	cmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		run.UI.Output(run.Help())
+	})
+
+	return cmd
 }
 
 func (c *RunCommand) Run(args []string) int {
 	duration := ui.InitDuration(c.UI)
-
-	args = c.Flags().Parse(c.UI, args)
 
 	if len(args) == 0 {
 		c.UI.Error("No asset PATH entered.")
